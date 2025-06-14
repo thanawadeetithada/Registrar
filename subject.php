@@ -12,7 +12,6 @@
     body {
         font-family: Arial, sans-serif;
         background-color: #ffffff;
-        padding-top: 30px;
     }
 
     .card {
@@ -34,10 +33,33 @@
     .bg-infos {
         background-color: #004085 !important;
     }
+
     </style>
 </head>
 
 <body>
+    <nav class="navbar navbar-expand-lg navbar-dark" style=" background-color: #004085 !important;padding-left: 2rem;">
+        <a class="navbar-brand" href="index.php">ระบบจัดการนักเรียน</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="student.php">ข้อมูลนักเรียน</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="subject.php">เกรดแต่ละรายวิชา <span class="sr-only">(current)</span></a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="card" style="border: 0px;">
         <h3>เกรดแต่ละรายวิชา</h3>
         <div class="card-body">

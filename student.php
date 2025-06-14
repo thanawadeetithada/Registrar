@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกข้อมูลนักเรียน</title>
+    <title>ข้อมูลนักเรียน</title>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -41,10 +41,10 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="index.php">บันทึกข้อมูลนักเรียน <span class="sr-only">(current)</span></a>
+                    <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="student.php">ข้อมูลนักเรียน</a>
+                <li class="nav-item active">
+                    <a class="nav-link" href="student.php">ข้อมูลนักเรียน <span class="sr-only">(current)</span></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="subject.php">เกรดแต่ละรายวิชา</a>
@@ -54,36 +54,11 @@
     </nav>
 
     <div class="card">
-        <h3>บันทึกข้อมูลนักเรียน</h3>
+        <h3>ข้อมูลนักเรียน</h3>
         <div class="card-body">
-            <div class="button-group">
-                <div class="import-button">
-                    <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
-                    <button id="uploadButton" class="btn btn-success">
-                        <i class="fa-regular fa-file-excel"></i><br>
-                        นำเข้าข้อมูลนักเรียน
-                    </button>
-                </div>
-            </div>
-            <br>
             <div class="card" style="background: #cfd8e5;">
                 <div class="card-body">
-                    <form>
-                        <div class="form-group">
-                            <label for="exampleInputEmail1">Email address</label>
-                            <input type="email" class="form-control" id="exampleInputEmail1"
-                                aria-describedby="emailHelp" placeholder="Enter email">
-                        </div>
-                        <div class="form-group">
-                            <label for="exampleInputPassword1">Password</label>
-                            <input type="password" class="form-control" id="exampleInputPassword1"
-                                placeholder="Password">
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
-                        <button class="btn btn-danger">ยกเลิก</button>
-
-                    </form>
+                  
                 </div>
             </div>
         </div>
