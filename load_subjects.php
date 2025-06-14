@@ -1,32 +1,26 @@
 <?php
-require_once 'db.php';
+header("Content-Type: application/json");
+require 'db.php'; // เชื่อมต่อฐานข้อมูล
 
-$sql = "SELECT s.id, s.subject_name, s.class_level, 
-        gr.min_score, gr.max_score, gr.grade 
-        FROM subjects s 
-        LEFT JOIN grade_ranges gr ON s.id = gr.subject_id 
-        ORDER BY s.id, gr.grade DESC";
+// ดึงวิชาทั้งหมด
+$stmt = $pdo->query("SELECT * FROM subjects");
+$subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$result = $conn->query($sql);
+$result = [];
 
-$subjects = [];
-$current_id = null;
+foreach ($subjects as $subject) {
+    // ดึงช่วงคะแนนจาก grade_ranges
+    $stmt2 = $pdo->prepare("SELECT min_score, max_score, grade FROM grade_ranges WHERE subject_id = ?");
+    $stmt2->execute([$subject['id']]);
+    $grades = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
-while ($row = $result->fetch_assoc()) {
-    if ($current_id !== $row['id']) {
-        $current_id = $row['id'];
-        $subjects[$current_id] = [
-            'subject_name' => $row['subject_name'],
-            'class_level' => $row['class_level'],
-            'grades' => []
-        ];
-    }
-
-    $subjects[$current_id]['grades'][] = [
-        'min_score' => $row['min_score'],
-        'max_score' => $row['max_score'],
-        'grade' => $row['grade']
+    // สร้าง object วิชา พร้อมเกรด
+    $result[] = [
+        "id" => $subject["id"],  // ✅ ต้องใส่ id ด้วย!
+        "subject_name" => $subject["subject_name"],
+        "class_level" => $subject["class_level"],
+        "grades" => $grades
     ];
 }
 
-echo json_encode(array_values($subjects));
+echo json_encode($result);

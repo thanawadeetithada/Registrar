@@ -3,16 +3,23 @@ header('Content-Type: application/json');
 require 'db.php';
 
 $data = json_decode(file_get_contents("php://input"), true);
-$id = $data['id'];
+if (!isset($data['id'])) {
+    echo json_encode(['success' => false, 'message' => 'Missing ID']);
+    exit;
+}
 
-$conn->begin_transaction();
+$id = intval($data['id']);
 
-// ลบช่วงเกรดก่อน
-$conn->query("DELETE FROM grade_ranges WHERE subject_id = $id");
+try {
+    // ลบเกรดก่อน (ถ้ามี foreign key)
+    $stmt1 = $pdo->prepare("DELETE FROM grade_ranges WHERE subject_id = ?");
+    $stmt1->execute([$id]);
 
-// ลบวิชา
-$conn->query("DELETE FROM subjects WHERE id = $id");
+    // ลบวิชา
+    $stmt2 = $pdo->prepare("DELETE FROM subjects WHERE id = ?");
+    $stmt2->execute([$id]);
 
-$conn->commit();
-
-echo json_encode(["success" => true]);
+    echo json_encode(['success' => true]);
+} catch (PDOException $e) {
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+}

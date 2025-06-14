@@ -2,30 +2,28 @@
 header('Content-Type: application/json');
 require 'db.php';
 
-$sql = "SELECT s.id AS subject_id, s.subject_name, s.class_level, g.min_score, g.max_score, g.grade
-        FROM subjects s
-        JOIN grade_ranges g ON s.id = g.subject_id
-        ORDER BY s.id, g.grade DESC";
-
-$result = $conn->query($sql);
-
-$subjects = [];
-$currentId = null;
-foreach ($result as $row) {
-    if ($currentId !== $row['subject_id']) {
-        $currentId = $row['subject_id'];
-        $subjects[$currentId] = [
-            'id' => $currentId,
-            'subject_name' => $row['subject_name'],
-            'class_level' => $row['class_level'],
-            'grades' => []
-        ];
-    }
-    $subjects[$currentId]['grades'][] = [
-        'min_score' => $row['min_score'],
-        'max_score' => $row['max_score'],
-        'grade' => $row['grade']
-    ];
+if (!isset($_GET['id'])) {
+    echo json_encode(['success' => false, 'message' => 'Missing ID']);
+    exit;
 }
 
-echo json_encode(array_values($subjects));
+$id = intval($_GET['id']);
+
+// ดึงข้อมูลวิชา
+$stmt = $pdo->prepare("SELECT * FROM subjects WHERE id = ?");
+$stmt->execute([$id]);
+$subject = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$subject) {
+    echo json_encode(['success' => false, 'message' => 'Subject not found']);
+    exit;
+}
+
+// ดึงช่วงเกรด
+$stmt2 = $pdo->prepare("SELECT * FROM grade_ranges WHERE subject_id = ?");
+$stmt2->execute([$id]);
+$grades = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+$subject['grades'] = $grades;
+
+echo json_encode($subject);
