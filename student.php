@@ -43,6 +43,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="record_score.php">บันทึกคะแนน</a>
+                </li>
                 <li class="nav-item active">
                     <a class="nav-link" href="student.php">ข้อมูลนักเรียน <span class="sr-only">(current)</span></a>
                 </li>
@@ -56,9 +59,19 @@
     <div class="card">
         <h3>ข้อมูลนักเรียน</h3>
         <div class="card-body">
+            <div class="button-group">
+                <div class="import-button">
+                    <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
+                    <button id="uploadButton" class="btn btn-success">
+                        <i class="fa-regular fa-file-excel"></i><br>
+                        ดาวน์โหลดข้อมูล
+                    </button>
+                </div>
+            </div>
+            <br>
             <div class="card" style="background: #cfd8e5;">
                 <div class="card-body">
-                  
+
                 </div>
             </div>
         </div>

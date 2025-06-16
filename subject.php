@@ -51,6 +51,9 @@
                     <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="record_score.php">บันทึกคะแนน</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="student.php">ข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item active">
