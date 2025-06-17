@@ -19,6 +19,7 @@
         padding: 1rem;
         border-radius: 10px;
     }
+
     .button-group {
         text-align: end;
         width: 95%;
@@ -79,10 +80,8 @@
             <div class="button-group">
                 <div class="import-button">
                     <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
-                    <button id="uploadButton" class="btn btn-success">
-                        <!-- <i class="fa-regular fa-file-excel"></i><br> -->
-                        นำเข้าข้อมูลนักเรียน
-                    </button>
+                    <button id="uploadButton" class="btn btn-success">นำเข้าข้อมูลนักเรียน</button>
+
                 </div>
             </div>
             <br>
@@ -176,7 +175,7 @@
     </div>
 
     <!-- Modal for Citizen ID Duplicate -->
-    <div class="modal fade" id="citizenIdModal" tabindex="-1" role="dialog" aria-labelledby="citizenIdModalLabel"
+    <!-- <div class="modal fade" id="citizenIdModal" tabindex="-1" role="dialog" aria-labelledby="citizenIdModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -187,10 +186,10 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- Modal for Student ID Duplicate -->
-    <div class="modal fade" id="studentIdModal" tabindex="-1" role="dialog" aria-labelledby="studentIdModalLabel"
+    <!-- <div class="modal fade" id="studentIdModal" tabindex="-1" role="dialog" aria-labelledby="studentIdModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -201,8 +200,55 @@
                 </div>
             </div>
         </div>
+    </div> -->
+
+    <!-- Modal for Success -->
+    <div class="modal fade" id="saveSuccessModal" tabindex="-1" role="dialog" aria-labelledby="saveSuccessModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fa fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5>นำเข้าข้อมูลนักเรียนสำเร็จ</h5>
+                    <button type="button" class="btn btn-success mt-3" data-dismiss="modal"
+                        onclick="location.reload()">ปิด</button>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- Modal for Citizen ID Duplicate -->
+    <div class="modal fade" id="citizenIdModal" tabindex="-1" role="dialog" aria-labelledby="citizenIdModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fa fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                    <h5>เลขบัตรประชาชนซ้ำ</h5>
+                    <!-- ชื่อ-นามสกุลของนักเรียนที่ซ้ำจะมาแสดงที่นี่ -->
+                    <div id="studentName" style="text-align: left; padding-left: 20px;"></div>
+                    <button type="button" class="btn btn-danger mt-3" data-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal for Student ID Duplicate -->
+    <div class="modal fade" id="studentIdModal" tabindex="-1" role="dialog" aria-labelledby="studentIdModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fa fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                    <h5>รหัสประจำตัวนักเรียนซ้ำ</h5>
+                    <!-- แสดงชื่อ-นามสกุลของนักเรียนที่ซ้ำ -->
+                    <div id="studentName" style="text-align: left; padding-left: 20px;"></div>
+                    <button type="button" class="btn btn-danger mt-3" data-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -241,6 +287,66 @@
                     alert('ไม่สามารถติดต่อเซิร์ฟเวอร์ได้');
                 }
             });
+        });
+    });
+
+    $('#uploadButton').on('click', function() {
+        $('#uploadExcel').trigger('click'); // เปิดหน้าต่างเลือกไฟล์
+    });
+
+    $('#uploadExcel').on('change', function() {
+        var fileInput = $('#uploadExcel')[0];
+        if (fileInput.files.length === 0) {
+            alert('กรุณาเลือกไฟล์ Excel');
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        // ส่งไฟล์ไปยัง PHP เพื่อประมวลผล
+        $.ajax({
+            url: 'import_excel_data_student.php', // ไฟล์ PHP ที่จะประมวลผลไฟล์ Excel
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function(response) {
+                var data = JSON.parse(response);
+                if (data.success) {
+                    $('#saveSuccessModal').modal('show');
+                } else {
+                    // ถ้ามีข้อผิดพลาด เช่น เลขบัตรประชาชนซ้ำหรือรหัสนักเรียนซ้ำ
+                    if (data.duplicate_citizens.length > 0) {
+                        // แสดง Modal แจ้งเตือนเลขบัตรประชาชนซ้ำ พร้อมชื่อ-นามสกุล
+                        var names = '';
+                        data.duplicate_citizens.forEach(function(item) {
+                            names += '<p style="padding-left: 20px;margin-bottom: 5px;">ชื่อ : ' + item.student_name + '</p>';
+                        });
+                        $('#citizenIdModal').find('#studentName').html(names);
+                        $('#citizenIdModal').modal('show');
+
+                        // หากพบว่าเลขบัตรประชาชนซ้ำแล้ว ให้ไม่ต้องแสดง Modal ของรหัสนักเรียนซ้ำ
+                        return; // ยุติการทำงานของฟังก์ชัน
+                    }
+
+                    if (data.duplicate_students.length > 0) {
+                        // แสดง Modal แจ้งเตือนรหัสนักเรียนซ้ำ พร้อมชื่อ-นามสกุล
+                        var names = '';
+                        data.duplicate_students.forEach(function(item) {
+                            // names += 'ชื่อ : ' + item.student_name + '<br>';
+                            names += '<p style="padding-left: 20px;margin-bottom: 5px;">ชื่อ : ' + item.student_name + '</p>';
+
+                        });
+                       
+                        $('#studentIdModal').find('#studentName').html(names);
+                        $('#studentIdModal').modal('show');
+                    }
+                }
+            },
+            error: function() {
+                alert('ไม่สามารถติดต่อเซิร์ฟเวอร์ได้');
+            }
         });
     });
     </script>

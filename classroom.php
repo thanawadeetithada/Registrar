@@ -96,7 +96,7 @@ foreach ($students as $student) {
 
     .button-group {
         display: flex;
-            justify-content: flex-end;
+        justify-content: flex-end;
     }
 
     .export-button {
@@ -136,8 +136,13 @@ foreach ($students as $student) {
             <div class="export-button">
                 <button class="btn btn-primary">
                     <!-- <i class="fa-regular fa-file-excel"></i><br> -->
+                     <a href="export_scores.php?subject_id=<?php echo $subject['id']; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>"
+                    class="btn btn-primary">
                     ดาวน์โหลด
+                </a>
                 </button>
+               
+
             </div>
             <div class="import-button">
                 <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
