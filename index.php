@@ -19,11 +19,6 @@
         padding: 1rem;
         border-radius: 10px;
     }
-
-    h3 {
-        text-align: center;
-    }
-
     .button-group {
         text-align: end;
         width: 95%;
@@ -72,9 +67,6 @@
                     <a class="nav-link" href="record_score.php">บันทึกคะแนน</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="student.php">ข้อมูลนักเรียน</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="subject.php">เกรดแต่ละรายวิชา</a>
                 </li>
             </ul>
@@ -82,13 +74,13 @@
     </nav>
 
     <div class="card">
-        <h3>บันทึกข้อมูลนักเรียน</h3>
+        <h2 class="text-center">บันทึกข้อมูลนักเรียน</h2>
         <div class="card-body">
             <div class="button-group">
                 <div class="import-button">
                     <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
                     <button id="uploadButton" class="btn btn-success">
-                        <i class="fa-regular fa-file-excel"></i><br>
+                        <!-- <i class="fa-regular fa-file-excel"></i><br> -->
                         นำเข้าข้อมูลนักเรียน
                     </button>
                 </div>
@@ -106,20 +98,13 @@
                                 <label>ระดับชั้น</label>
                                 <select class="form-control" name="class_level" id="classLevelSelect" required>
                                     <option value="" disabled selected>-- เลือกระดับชั้น --</option>
-                                    <option value="ป.1">ป.1</option>
-                                    <option value="ป.2">ป.2</option>
-                                    <option value="ป.3">ป.3</option>
-                                    <option value="ป.4">ป.4</option>
-                                    <option value="ป.5">ป.5</option>
-                                    <option value="ป.6">ป.6</option>
-                                    <option value="ม.1">ม.1</option>
-                                    <option value="ม.2">ม.2</option>
-                                    <option value="ม.3">ม.3</option>
+                                    <option value="ชั้นประถมศึกษา">ชั้นประถมศึกษา</option>
+                                    <option value="ชั้นมัธยมศึกษา">ชั้นมัธยมศึกษา</option>
                                 </select>
 
                             </div>
                             <div class="form-group">
-                                <label>ห้องเลขที่</label>
+                                <label>ห้องเลขที่ <span>(ตัวอย่าง 1/3)</span></label>
                                 <input type="text" class="form-control" name="classroom" required>
                             </div>
                             <div class="form-group">

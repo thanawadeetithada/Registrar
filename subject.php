@@ -53,9 +53,6 @@
                 <li class="nav-item">
                     <a class="nav-link" href="record_score.php">บันทึกคะแนน</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="student.php">ข้อมูลนักเรียน</a>
-                </li>
                 <li class="nav-item active">
                     <a class="nav-link" href="subject.php">เกรดแต่ละรายวิชา <span class="sr-only">(current)</span></a>
                 </li>
@@ -81,7 +78,9 @@
 
                 <button class="btn btn-success ml-3" data-toggle="modal" data-target="#addSubjectModal"
                     onclick="openAddModal()">
-                    <i class="fa-solid fa-plus"></i> เพิ่มรายวิชา
+                    <!-- <i class="fa-solid fa-plus"> -->
+
+                    </i> เพิ่มรายวิชา
                 </button>
             </div>
 

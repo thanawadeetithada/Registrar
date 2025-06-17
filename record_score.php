@@ -1,55 +1,56 @@
+<?php
+require_once 'db.php';  // เชื่อมต่อฐานข้อมูล
+
+$academic_year_query = $pdo->query("SELECT DISTINCT academic_year FROM students ORDER BY academic_year DESC");
+$academic_years = $academic_year_query->fetchAll(PDO::FETCH_ASSOC);
+
+$subjects_query = $pdo->query("SELECT * FROM subjects");
+$subjects = $subjects_query->fetchAll(PDO::FETCH_ASSOC);
+
+$students_query = $pdo->query("
+    SELECT * FROM students 
+    ORDER BY academic_year DESC, class_level, classroom, student_id
+");
+$students = $students_query->fetchAll(PDO::FETCH_ASSOC);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกข้อมูลนักเรียน</title>
-
+    <title>บันทึกคะแนนนักเรียน</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f9f9f9;
-        margin: 0;
-    }
-
     .card {
-        padding: 1rem;
-        border-radius: 10px;
+        margin-bottom: 20px;
     }
 
-    h3 {
+    .card-header {
+        background-color: #004085;
+        color: white;
+        font-size: 18px;
+    }
+
+    .table th,
+    .table td {
+        vertical-align: middle;
+    }
+
+    .table td,
+    .table th {
         text-align: center;
     }
 
-    .button-group {
-        text-align: end;
-        width: 95%;
+    .table td.subject-name,
+    .table th.subject-name {
+        text-align: left;
     }
 
-    .btn-form {
-        text-align: center;
-    }
-
-    .over-card {
-        display: flex;
-        justify-content: center;
-    }
-
-    form {
-        margin: 0 2%;
-    }
-
-    .table-bordered th,
-    .table-bordered td {
-        border: 1px solid #000 !important;
-        /* เปลี่ยนเป็นสีดำ */
-    }
-
-    .table-bordered {
-        border: 1px solid #000 !important;
+    .form-group {
+        margin-bottom: 10px;
     }
     </style>
 </head>
@@ -68,11 +69,8 @@
                     <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="record_score.php">บันทึกคะแนน <span
+                    <a class="nav-link active" href="record_score.php">บันทึกคะแนน<span
                             class="sr-only">(current)</span></a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="student.php">ข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="subject.php">เกรดแต่ละรายวิชา</a>
@@ -81,55 +79,83 @@
         </div>
     </nav>
 
-    <div class="card">
-        <h3>บันทึกคะแนนของนักเรียน</h3>
-        <div class="card-body">
-            <div class="button-group">
-                <div class="import-button">
-                    <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
-                    <button id="uploadButton" class="btn btn-success">
-                        <i class="fa-regular fa-file-excel"></i><br>
-                        นำเข้าคะแนน
-                    </button>
-                </div>
+    <div class="container mt-4">
+        <h2 class="text-center">บันทึกคะแนนนักเรียน</h2>
+<br>
+        <?php 
+        $previous_subject_name = ''; // เก็บชื่อวิชาที่แสดงไปแล้ว
+        $previous_class_level = ''; // เก็บระดับชั้นที่แสดงไปแล้ว
+        $previous_classroom = ''; // เก็บห้องที่แสดงไปแล้ว
+        $previous_academic_year = ''; // เก็บปีการศึกษาที่แสดงไปแล้ว
+        
+        foreach ($academic_years as $academic_year): ?>
+        <!-- แสดงปีการศึกษา -->
+        <div class="card">
+            <div class="card-header">
+                ปีการศึกษา <?php echo $academic_year['academic_year']; ?>
             </div>
-            <br>
-            <div class="over-card">
-                <div class="card" style="background: #cfd8e5; width: 90%;">
-                    <div class="card-body">
-                        <form id="studentForm">
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>วิชา</th>
+                            <th>ระดับชั้น</th>
+                            <th>ห้อง</th>
+                            <th>กรอกคะแนน</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        foreach ($subjects as $subject):
+                            $students_query = $pdo->prepare("
+                                SELECT * FROM students WHERE class_level = :class_level AND academic_year = :academic_year
+                            ");
+                            $students_query->execute([
+                                'class_level' => $subject['class_level'],
+                                'academic_year' => $academic_year['academic_year']
+                            ]);
+                            $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
+                            
+                            foreach ($students as $student):
+                                $is_subject_duplicate = ($previous_subject_name === $subject['subject_name'] && 
+                                                        $previous_class_level === $subject['class_level'] && 
+                                                        $previous_academic_year === $academic_year['academic_year']);
+                                
+                                if ($previous_academic_year !== $academic_year['academic_year'] || 
+                                    $previous_class_level !== $subject['class_level'] || 
+                                    $previous_classroom !== $student['classroom']):
+                        ?>
+                        <tr>
+                            <td class="subject-name">
+                                <?php echo $is_subject_duplicate ? '' : $subject['subject_name']; ?></td>
+                            <td><?php echo $subject['class_level']; ?></td>
+                            <td><?php echo $student['classroom']; ?></td>
+                            <td>
+                                <a href="classroom.php?academic_year=<?php echo $academic_year['academic_year']; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&subject_id=<?php echo $subject['id']; ?>&class_level=<?php echo $subject['class_level']; ?>&classroom=<?php echo $student['classroom']; ?>"
+                                    class="btn btn-primary"
+                                    onclick="console.log('subject_id:', <?php echo $subject['id']; ?>)">กรอกคะแนน</a>
 
-                            <div class="btn-form">
-                                <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
-                                <button type="reset" class="btn btn-danger">ยกเลิก</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                            </td>
+                        </tr>
+                        <?php
+                            endif;
+                                $previous_subject_name = $subject['subject_name'];      
+                                $previous_class_level = $subject['class_level'];
+                                $previous_classroom = $student['classroom'];
+                                $previous_academic_year = $academic_year['academic_year'];
+                            endforeach;
+                        endforeach;
+                        ?>
+                    </tbody>
+                </table>
             </div>
         </div>
+        <?php endforeach; ?>
     </div>
 
-    <div class="modal fade" id="saveSuccessModal" tabindex="-1" role="dialog" aria-labelledby="saveSuccessModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-body text-center p-4">
-                    <i class="fa fa-check-circle fa-3x text-success mb-3"></i>
-                    <h5>บันทึกสำเร็จ</h5>
-                    <button type="button" class="btn btn-success mt-3" data-dismiss="modal"
-                        onclick="location.reload()">ปิด</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
 
     </script>
-
 </body>
 
 </html>
