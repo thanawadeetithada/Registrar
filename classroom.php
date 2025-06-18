@@ -134,22 +134,19 @@ foreach ($students as $student) {
         <br>
         <div class="button-group">
             <div class="export-button">
-                <button class="btn btn-primary">
-                    <!-- <i class="fa-regular fa-file-excel"></i><br> -->
-                     <a href="export_scores.php?subject_id=<?php echo $subject['id']; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>"
-                    class="btn btn-primary">
-                    ดาวน์โหลด
-                </a>
+                <button class="btn btn-primary" style="padding: 0px !important;">
+                    <a href="export_scores.php?subject_id=<?php echo $subject['id']; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>"
+                        class="btn btn-primary">
+                        ดาวน์โหลด
+                    </a>
                 </button>
-               
-
             </div>
             <div class="import-button">
-                <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
-                <button id="uploadButton" class="btn btn-success">
-                    <!-- <i class="fa-regular fa-file-excel"></i><br> -->
+                <button id="uploadButton" class="btn btn-success" style="padding-bottom: 7px;padding-top: 7px;">
                     นำเข้าคะแนนนักเรียน
                 </button>
+                <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
+
             </div>
         </div>
         <br>
@@ -244,6 +241,20 @@ foreach ($students as $student) {
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="importSuccessModal" tabindex="-1" role="dialog"
+        aria-labelledby="importSuccessModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <h5>นำเข้าคะแนนสำเร็จ</h5>
+                    <button type="button" class="btn btn-success mt-3" data-dismiss="modal"
+                        onclick="location.reload()">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -267,6 +278,36 @@ foreach ($students as $student) {
             });
         });
     });
+
+    $('#uploadButton').click(function() {
+        $('#uploadExcel').click();
+    });
+
+    $('#uploadExcel').change(function() {
+        let file = this.files[0];
+        let formData = new FormData();
+        formData.append('file', file);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let subjectId = urlParams.get('subject_id');
+        let academicYear = urlParams.get('academic_year');
+
+        $.ajax({
+            url: 'import_scores.php?subject_id=' + subjectId + '&academic_year=' + academicYear,
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function(res) {
+                $('#importSuccessModal').modal('show');
+
+            },
+            error: function() {
+                alert('เกิดข้อผิดพลาดในการนำเข้า');
+            }
+        });
+    });
+
 
     var urlParams = new URLSearchParams(window.location.search);
     var subjectId = urlParams.get('subject_id');
