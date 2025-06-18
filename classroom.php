@@ -255,6 +255,19 @@ foreach ($students as $student) {
         </div>
     </div>
 
+    <div class="modal fade" id="importErrorModal" tabindex="-1" role="dialog" aria-labelledby="importErrorModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <h5 class="text-danger">นักเรียนบางคนไม่มีในระบบ</h5>
+                    <p id="missing-students" style="white-space: pre-line;"></p>
+                    <button type="button" class="btn btn-danger mt-3" data-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
     <script>
@@ -298,14 +311,20 @@ foreach ($students as $student) {
             data: formData,
             contentType: false,
             processData: false,
+            dataType: 'json', // ✅ เพิ่มบรรทัดนี้เพื่อให้รับ res.not_found ได้
             success: function(res) {
                 $('#importSuccessModal').modal('show');
-
+                if (res.not_found && res.not_found.length > 0) {
+                    const missingList = res.not_found.join('\n');
+                    $('#missing-students').text(missingList);
+                    $('#importErrorModal').modal('show');
+                }
             },
             error: function() {
                 alert('เกิดข้อผิดพลาดในการนำเข้า');
             }
         });
+
     });
 
 

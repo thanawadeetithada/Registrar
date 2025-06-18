@@ -4,6 +4,8 @@ require_once 'db.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
+$not_found = [];
+
 if ($_FILES['file']['error'] === UPLOAD_ERR_OK) {
     $file = $_FILES['file']['tmp_name'];
     $spreadsheet = IOFactory::load($file);
@@ -22,15 +24,23 @@ if ($_FILES['file']['error'] === UPLOAD_ERR_OK) {
     ");
 
     foreach ($rows as $i => $row) {
-        if ($i === 0) continue; // ข้ามแถว header
+        if ($i === 0) continue; // ข้ามหัวตาราง
 
-        // ดึงเฉพาะ index ที่ต้องใช้: [1] = student_id, [4] = s1, [5] = s2
         $student_id = $row[1];
         $s1 = $row[4];
         $s2 = $row[5];
 
-        // ตรวจว่ามี student_id หรือไม่ก่อน insert
-        if ($student_id) {
+        if (!$student_id) continue;
+
+        // ตรวจสอบว่านักเรียนมีอยู่ในฐานข้อมูลไหม
+        $check = $pdo->prepare("SELECT prefix, student_name FROM students WHERE student_id = :student_id AND academic_year = :academic_year");
+        $check->execute([
+            'student_id' => $student_id,
+            'academic_year' => $academic_year
+        ]);
+        $student = $check->fetch(PDO::FETCH_ASSOC);
+
+        if ($student) {
             $insert->execute([
                 'subject_id' => $subject_id,
                 'academic_year' => $academic_year,
@@ -38,11 +48,20 @@ if ($_FILES['file']['error'] === UPLOAD_ERR_OK) {
                 'semester2_score' => $s2 ?: 0,
                 'student_id' => $student_id
             ]);
+        } else {
+                $not_found[] = "ไม่พบ" . ($student['prefix'] ?? '') . ($student['student_name'] ?? '') . " (รหัสนักเรียน : $student_id)";
         }
     }
 
-    echo json_encode(['success' => true]);
+    echo json_encode([
+        'success' => true,
+        'not_found' => $not_found
+    ]);
 } else {
-    echo json_encode(['success' => false, 'error' => 'Upload failed']);
+    echo json_encode([
+        'success' => false,
+        'error' => 'Upload failed'
+    ]);
 }
+
 ?>

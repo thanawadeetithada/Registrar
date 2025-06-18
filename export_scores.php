@@ -3,6 +3,7 @@ require 'vendor/autoload.php'; // ต้องติดตั้ง PhpSpreadshe
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 require_once 'db.php';  // เชื่อมต่อฐานข้อมูล
 
@@ -61,17 +62,16 @@ foreach ($students as $student) {
             break;
         }
     }
+    
+ $sheet->setCellValue('A' . $row, $count++);
+    $sheet->setCellValue('B' . $row, $student['student_id']);
+    $sheet->setCellValueExplicit('C' . $row, $student['citizen_id'], DataType::TYPE_STRING); // ✅ ป้องกัน E+12
+    $sheet->setCellValue('D' . $row, $student['prefix'] . $student['student_name']);
+    $sheet->setCellValue('E' . $row, $score1);
+    $sheet->setCellValue('F' . $row, $score2);
+    $sheet->setCellValue('G' . $row, $total);
+    $sheet->setCellValue('H' . $row, $grade);
 
-    $sheet->fromArray([
-        $count++,
-        $student['student_id'],
-        $student['citizen_id'],
-        $student['prefix'] . $student['student_name'],
-        $score1,
-        $score2,
-        $total,
-        $grade
-    ], NULL, 'A' . $row);
     $row++;
 }
 
