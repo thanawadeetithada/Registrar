@@ -7,11 +7,6 @@ $academic_years = $academic_year_query->fetchAll(PDO::FETCH_ASSOC);
 $subjects_query = $pdo->query("SELECT * FROM subjects");
 $subjects = $subjects_query->fetchAll(PDO::FETCH_ASSOC);
 
-$students_query = $pdo->query("
-    SELECT * FROM students 
-    ORDER BY academic_year DESC, class_level, classroom, student_id
-");
-$students = $students_query->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -94,12 +89,10 @@ $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
         <br>
         <div class="button-group">
             <div class="export-button">
-                <button class="btn btn-primary" style="padding: 0px !important;">
-                    <a href="export_scores.php?subject_id=<?php echo $subject['id']; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>"
-                        class="btn btn-primary">
-                        ดาวน์โหลด
-                    </a>
-                </button>
+                <div class="export-button">
+                    <a href="export_scoresall.php" class="btn btn-primary">ดาวน์โหลด</a>
+                </div>
+
             </div>
             <div class="import-button">
                 <button id="uploadButton" class="btn btn-success" style="padding-bottom: 7px;padding-top: 7px;">
@@ -109,13 +102,13 @@ $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
         <br>
-        <?php 
-        $previous_subject_name = ''; // เก็บชื่อวิชาที่แสดงไปแล้ว
-        $previous_class_level = ''; // เก็บระดับชั้นที่แสดงไปแล้ว
-        $previous_classroom = ''; // เก็บห้องที่แสดงไปแล้ว
-        $previous_academic_year = ''; // เก็บปีการศึกษาที่แสดงไปแล้ว
-        
-        foreach ($academic_years as $academic_year): ?>
+        <?php foreach ($academic_years as $academic_year): 
+    $previous_subject_name = ''; 
+    $previous_class_level = ''; 
+    $previous_classroom = ''; 
+    $previous_academic_year = ''; 
+?>
+
         <!-- แสดงปีการศึกษา -->
         <div class="card">
             <div class="card-header">
@@ -155,9 +148,13 @@ $students_query->execute([
                                                         $previous_class_level === $subject['class_level'] && 
                                                         $previous_academic_year === $academic_year['academic_year']);
                                 
-                                if ($previous_academic_year !== $academic_year['academic_year'] || 
-                                    $previous_class_level !== $subject['class_level'] || 
-                                    $previous_classroom !== $student['classroom']):
+                                if (
+    $previous_academic_year !== $academic_year['academic_year'] ||
+    $previous_class_level !== $subject['class_level'] ||
+    $previous_classroom !== $student['classroom'] ||
+    $previous_subject_name !== $subject['subject_name']
+)
+:
                         ?>
                         <tr>
                             <td class="subject-name">
