@@ -22,6 +22,7 @@ $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>บันทึกคะแนนนักเรียน</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <style>
     .card {
@@ -52,6 +53,15 @@ $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
     .form-group {
         margin-bottom: 10px;
     }
+
+    .button-group {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .export-button {
+        margin-right: 15px;
+    }
     </style>
 </head>
 
@@ -81,7 +91,24 @@ $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="container mt-4">
         <h2 class="text-center">บันทึกคะแนนนักเรียน</h2>
-<br>
+        <br>
+        <div class="button-group">
+            <div class="export-button">
+                <button class="btn btn-primary" style="padding: 0px !important;">
+                    <a href="export_scores.php?subject_id=<?php echo $subject['id']; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>"
+                        class="btn btn-primary">
+                        ดาวน์โหลด
+                    </a>
+                </button>
+            </div>
+            <div class="import-button">
+                <button id="uploadButton" class="btn btn-success" style="padding-bottom: 7px;padding-top: 7px;">
+                    นำเข้าคะแนนนักเรียน
+                </button>
+                <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
+            </div>
+        </div>
+        <br>
         <?php 
         $previous_subject_name = ''; // เก็บชื่อวิชาที่แสดงไปแล้ว
         $previous_class_level = ''; // เก็บระดับชั้นที่แสดงไปแล้ว
@@ -108,12 +135,19 @@ $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
                         <?php
                         foreach ($subjects as $subject):
                             $students_query = $pdo->prepare("
-                                SELECT * FROM students WHERE class_level = :class_level AND academic_year = :academic_year
-                            ");
-                            $students_query->execute([
-                                'class_level' => $subject['class_level'],
-                                'academic_year' => $academic_year['academic_year']
-                            ]);
+    SELECT DISTINCT s.*
+    FROM students s
+    JOIN student_scores sc ON s.student_id = sc.student_id
+    WHERE s.class_level = :class_level
+      AND s.academic_year = :academic_year
+      AND sc.subject_id = :subject_id
+");
+$students_query->execute([
+    'class_level' => $subject['class_level'],
+    'academic_year' => $academic_year['academic_year'],
+    'subject_id' => $subject['id']
+]);
+
                             $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
                             
                             foreach ($students as $student):
@@ -153,9 +187,57 @@ $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
         <?php endforeach; ?>
     </div>
 
-    <script>
+    <!-- Success Modal -->
+    <div class="modal fade" id="importSuccessModal" tabindex="-1" role="dialog" aria-labelledby="saveSuccessModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fa fa-check-circle fa-3x text-success mb-3"></i>
+                    <div id="modalMessage" class="text-center"></div>
+                    <button type="button" class="btn btn-success mt-3" data-dismiss="modal"
+                        onclick="location.reload()">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+    document.getElementById('uploadButton').addEventListener('click', function() {
+        document.getElementById('uploadExcel').click();
+    });
+
+    document.getElementById('uploadExcel').addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch('import_scoresall.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    document.getElementById('modalMessage').innerHTML =
+                        `นำเข้าคะแนนสำเร็จแล้ว<br>(${result.inserted} รายการ)`;
+                    $('#importSuccessModal').modal('show');
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Upload failed:', error);
+                alert('ไม่สามารถอัปโหลดไฟล์ได้: ' + error);
+            });
+    });
     </script>
+
 </body>
 
 </html>

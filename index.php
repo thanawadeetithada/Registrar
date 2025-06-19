@@ -174,34 +174,6 @@
         </div>
     </div>
 
-    <!-- Modal for Citizen ID Duplicate -->
-    <!-- <div class="modal fade" id="citizenIdModal" tabindex="-1" role="dialog" aria-labelledby="citizenIdModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-body text-center p-4">
-                    <i class="fa fa-exclamation-circle fa-3x text-danger mb-3"></i>
-                    <h5>เลขบัตรประชาชนซ้ำ</h5>
-                    <button type="button" class="btn btn-danger mt-3" data-dismiss="modal">ปิด</button>
-                </div>
-            </div>
-        </div>
-    </div> -->
-
-    <!-- Modal for Student ID Duplicate -->
-    <!-- <div class="modal fade" id="studentIdModal" tabindex="-1" role="dialog" aria-labelledby="studentIdModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-body text-center p-4">
-                    <i class="fa fa-exclamation-circle fa-3x text-danger mb-3"></i>
-                    <h5>รหัสประจำตัวนักเรียนซ้ำ</h5>
-                    <button type="button" class="btn btn-danger mt-3" data-dismiss="modal">ปิด</button>
-                </div>
-            </div>
-        </div>
-    </div> -->
-
     <!-- Modal for Success -->
     <div class="modal fade" id="saveSuccessModal" tabindex="-1" role="dialog" aria-labelledby="saveSuccessModalLabel"
         aria-hidden="true">
