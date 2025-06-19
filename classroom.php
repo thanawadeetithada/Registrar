@@ -158,6 +158,7 @@ foreach ($students as $student) {
             <div class="card-body">
                 <form method="POST"
                     action="save_scores.php?subject_id=<?php echo $subject['id']; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>">
+                    <div class="table-responsive">
                     <table class="table table-bordered">
                         <thead>
                             <tr>
@@ -218,6 +219,7 @@ foreach ($students as $student) {
                         </tbody>
 
                     </table>
+                    </div>
                     <div class="btn-record">
                         <button type="submit" class="btn btn-primary" data-toggle="modal"
                             data-target="#saveSuccessModal">บันทึกคะแนน</button>
