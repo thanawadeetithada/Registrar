@@ -11,11 +11,15 @@ if (!isset($data['id'])) {
 $id = intval($data['id']);
 
 try {
-    // ลบเกรดก่อน (ถ้ามี foreign key)
+    // ลบจาก student_scores ก่อน (เพราะมี foreign key)
+    $stmt0 = $pdo->prepare("DELETE FROM student_scores WHERE subject_id = ?");
+    $stmt0->execute([$id]);
+
+    // ลบจาก grade_ranges
     $stmt1 = $pdo->prepare("DELETE FROM grade_ranges WHERE subject_id = ?");
     $stmt1->execute([$id]);
 
-    // ลบวิชา
+    // ลบจาก subjects
     $stmt2 = $pdo->prepare("DELETE FROM subjects WHERE id = ?");
     $stmt2->execute([$id]);
 
@@ -23,3 +27,4 @@ try {
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
+

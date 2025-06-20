@@ -33,13 +33,12 @@
     .bg-infos {
         background-color: #004085 !important;
     }
-
     </style>
 </head>
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style=" background-color: #004085 !important;padding-left: 2rem;">
-        <a class="navbar-brand" href="index.php">ระบบจัดการนักเรียน</a>
+        <a class="navbar-brand" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -47,6 +46,9 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
+                 <li class="nav-item">
+                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
@@ -78,14 +80,12 @@
 
                 <button class="btn btn-success ml-3" data-toggle="modal" data-target="#addSubjectModal"
                     onclick="openAddModal()">
-                    <!-- <i class="fa-solid fa-plus"> -->
-
                     </i> เพิ่มรายวิชา
                 </button>
             </div>
-
+            <br>
             <div class="card" style="background: #cfd8e5;">
-                <div class="card-body" style="padding-bottom: 0px;">
+                <div class="card-body" style="padding-top: 0px;padding-bottom: 0px;">
                     <div id="subjectCardContainer" class="row"></div>
                 </div>
             </div>
@@ -104,7 +104,12 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <!-- ช่องกรอกชื่อวิชา -->
+                    <div class="form-group">
+                        <label>ปีการศึกษา</label>
+                        <input type="text" id="academicYear" class="form-control" placeholder="เช่น 2568"
+                            autocomplete="off" required />
+                    </div>
+
                     <div class="form-group">
                         <label>ชื่อวิชา</label>
                         <input type="text" id="subjectName" class="form-control" placeholder="เช่น คณิตศาสตร์"
@@ -196,9 +201,22 @@
     </div>
 
     <!-- SCRIPT -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+    function clearModal() {
+        document.getElementById("subjectName").value = "";
+        document.getElementById("academicYear").value = "";
+        document.getElementById("classLevel").selectedIndex = 0;
+        document.getElementById("saveSubjectBtn").removeAttribute("data-id");
+        document.querySelector("#gradeRangeTable tbody").innerHTML = "";
+        addGradeRangeRow();
+    }
+
+    function openAddModal() {
+        clearModal();
+    }
+
     let allSubjects = [];
 
     function filterSubjects(level) {
@@ -209,8 +227,8 @@
 
         if (filtered.length === 0) {
             container.innerHTML = `
-            <div class="col-12 text-center text-muted py-4">
-                <p class="font-weight-bold text-dark">ไม่มีข้อมูล</p>
+              <div class="col-12 text-center text-muted">
+                <h5><i class="fas fa-info-circle"></i> ไม่พบข้อมูล</h5>
             </div>
         `;
             return; // ✅ หยุดตรงนี้ถ้าไม่มีข้อมูล
@@ -222,15 +240,15 @@
             }
 
             const card = document.createElement("div");
-            card.className = "col-md-12 mb-4";
+            card.className = "col-md-12";
 
             card.innerHTML = `
-            <div class="card shadow-sm" style="padding: 20px;">
-                <div class="card-header bg-infos text-white d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>${subject.subject_name}</strong> | ${subject.class_level}
-                    </div>
-                </div>
+  <div class="card shadow-sm" style="padding: 20px;margin-top: 20px;margin-bottom: 20px;">
+    <div class="card-header bg-infos text-white d-flex justify-content-between align-items-center">
+      <div>
+        <strong>${subject.subject_name}</strong> | ${subject.class_level} | ปีการศึกษา ${subject.academic_year}
+      </div>
+    </div>
                 <div class="card-body" style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 10px;">
                     <table class="table table-bordered table-sm text-center mb-0">
                         <thead class="thead-light">
@@ -288,6 +306,13 @@
         const subjectId = document.getElementById("saveSubjectBtn").getAttribute("data-id");
         const subjectName = document.getElementById("subjectName").value.trim();
         const classLevel = document.getElementById("classLevel").value;
+        const academicYear = document.getElementById("academicYear").value.trim();
+
+        if (!academicYear) {
+            alert("กรุณากรอกปีการศึกษา");
+            return;
+        }
+
 
         if (!subjectName || !classLevel) {
             alert("กรุณากรอกชื่อวิชาและเลือกระดับชั้น");
@@ -298,6 +323,16 @@
         if (rows.length === 0) {
             alert("กรุณาเพิ่มช่วงคะแนนอย่างน้อย 1 แถว");
             return;
+        }
+
+        for (let row of rows) {
+            const min = row.cells[0].querySelector('input').value;
+            const max = row.cells[1].querySelector('input').value;
+            const grade = row.cells[2].querySelector('input').value;
+            if (!min || !max || !grade) {
+                alert("กรุณากรอกค่าช่วงคะแนนให้ครบทุกช่อง");
+                return;
+            }
         }
 
         const gradeRanges = Array.from(rows).map(row => {
@@ -317,6 +352,7 @@
                     id: subjectId || null,
                     subject: subjectName,
                     classLevel: classLevel,
+                    academicYear: academicYear,
                     grades: gradeRanges
                 })
             })
@@ -326,6 +362,7 @@
                     $('#addSubjectModal').modal('hide');
                     document.getElementById("subjectName").value = "";
                     document.getElementById("classLevel").selectedIndex = 0;
+                    document.getElementById("academicYear").value = "";
                     document.querySelector("#gradeRangeTable tbody").innerHTML = "";
                     document.getElementById("saveSubjectBtn").removeAttribute("data-id"); // ✅ เคลียร์ค่า id
 
@@ -360,6 +397,8 @@
                 console.log('subject', subject)
                 document.getElementById("subjectName").value = subject.subject_name;
                 document.getElementById("classLevel").value = subject.class_level;
+                document.getElementById("academicYear").value = subject.academic_year || "";
+
 
                 const tbody = document.querySelector("#gradeRangeTable tbody");
                 tbody.innerHTML = "";
@@ -416,13 +455,14 @@
                 return res.json();
             })
             .then(data => {
-                $('#confirmDeleteModal').modal('hide'); // ซ่อน modal ยืนยันลบ
+                $('#confirmDeleteModal').modal('hide');
 
                 if (data.success) {
-                    $('#successModal').modal('show'); // ✅ แสดง modal ลบสำเร็จ
-                    loadSubjects(); // โหลดใหม่
+                    $('#successModal').modal('show');
+                    loadSubjects();
                 } else {
-                    alert("ไม่สามารถลบได้");
+                    alert("ไม่สามารถลบได้: " + (data.message || "ไม่ทราบสาเหตุ"));
+                    console.error("Delete error:", data);
                 }
             })
             .catch(err => {

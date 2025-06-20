@@ -107,7 +107,7 @@ foreach ($students as $student) {
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #004085 !important;padding-left: 2rem;">
-        <a class="navbar-brand" href="index.php">ระบบจัดการนักเรียน</a>
+        <a class="navbar-brand" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -115,6 +115,9 @@ foreach ($students as $student) {
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
@@ -159,21 +162,22 @@ foreach ($students as $student) {
                 <form method="POST"
                     action="save_scores.php?subject_id=<?php echo $subject['id']; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>">
                     <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>ลำดับ</th>
-                                <th>รหัสประจำตัวนักเรียน</th>
-                                <th>เลขบัตรประชาชน</th>
-                                <th>ชื่อ-นามสกุล</th>
-                                <th>คะแนนภาคเรียนที่ 1</th>
-                                <th>คะแนนภาคเรียนที่ 2</th>
-                                <th>คะแนนรวม</th>
-                                <th>เกรด</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>ลำดับ</th>
+                                    <th>รหัสประจำตัวนักเรียน</th>
+                                    <th>เลขบัตรประชาชน</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>คะแนนภาคเรียนที่ 1</th>
+                                    <th>คะแนนภาคเรียนที่ 2</th>
+                                    <th>คะแนนรวม</th>
+                                    <th>เกรด</th>
+                                    <th>ลบ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
     $count = 1;
     foreach ($students as $student):
         // กรองข้อมูลคะแนนของนักเรียนแต่ละคน
@@ -193,32 +197,42 @@ foreach ($students as $student) {
             }
         }
     ?>
-                            <tr>
-                                <td><?php echo $count++; ?></td>
-                                <td><?php echo $student['student_id']; ?></td>
-                                <td><?php echo $student['citizen_id']; ?></td>
-                                <td><?php echo $student['prefix'] . $student['student_name']; ?></td>
-                                <td>
-                                    <input type="number" name="semester1_score[<?php echo $student['student_id']; ?>]"
-                                        value="<?php echo $student_score ? $student_score['semester1_score'] : ''; ?>"
-                                        class="form-control" step="0.01">
-                                </td>
-                                <td>
-                                    <input type="number" name="semester2_score[<?php echo $student['student_id']; ?>]"
-                                        value="<?php echo $student_score ? $student_score['semester2_score'] : ''; ?>"
-                                        class="form-control" step="0.01">
-                                </td>
-                                <td>
-                                    <?php echo $total_score; ?>
-                                </td>
-                                <td>
-                                    <?php echo $grade; ?>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
+                                <tr>
+                                    <td><?php echo $count++; ?></td>
+                                    <td><?php echo $student['student_id']; ?></td>
+                                    <td><?php echo $student['citizen_id']; ?></td>
+                                    <td><?php echo $student['prefix'] . $student['student_name']; ?></td>
+                                    <td>
+                                        <input type="number"
+                                            name="semester1_score[<?php echo $student['student_id']; ?>]"
+                                            value="<?php echo $student_score ? $student_score['semester1_score'] : ''; ?>"
+                                            class="form-control" step="0.01">
+                                    </td>
+                                    <td>
+                                        <input type="number"
+                                            name="semester2_score[<?php echo $student['student_id']; ?>]"
+                                            value="<?php echo $student_score ? $student_score['semester2_score'] : ''; ?>"
+                                            class="form-control" step="0.01">
+                                    </td>
+                                    <td>
+                                        <?php echo $total_score; ?>
+                                    </td>
+                                    <td>
+                                        <?php echo $grade; ?>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm delete-student"
+                                            data-student-id="<?php echo $student['student_id']; ?>"
+                                            data-academic-year="<?php echo $academic_year; ?>"
+                                            data-classroom="<?php echo $classroom; ?>">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
 
-                    </table>
+                        </table>
                     </div>
                     <div class="btn-record">
                         <button type="submit" class="btn btn-primary" data-toggle="modal"
@@ -265,6 +279,34 @@ foreach ($students as $student) {
                     <h5 class="text-danger">นักเรียนบางคนไม่มีในระบบ</h5>
                     <p id="missing-students" style="white-space: pre-line;"></p>
                     <button type="button" class="btn btn-danger mt-3" data-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal ยืนยันการลบ -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <h5 class="mb-3">คุณแน่ใจหรือไม่?</h5>
+                    <p>ต้องการลบนักเรียนคนนี้ออกจากระบบ (รวมคะแนน)?</p>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">ลบ</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal แจ้งเตือนสำเร็จ -->
+    <div class="modal fade" id="deleteSuccessModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5>ลบนักเรียนเรียบร้อยแล้ว</h5>
+                    <button type="button" class="btn btn-success mt-3" data-dismiss="modal"
+                        onclick="location.reload()">ปิด</button>
                 </div>
             </div>
         </div>
@@ -329,12 +371,36 @@ foreach ($students as $student) {
 
     });
 
+    let studentIdToDelete = null;
 
-    var urlParams = new URLSearchParams(window.location.search);
-    var subjectId = urlParams.get('subject_id');
+    $('.delete-student').on('click', function() {
+        studentIdToDelete = $(this).data('student-id');
+        $('#confirmDeleteModal').modal('show');
+    });
 
-    // แสดงค่า subject_id ใน console
-    console.log('subject_id from URL:', subjectId);
+    $('#confirmDeleteBtn').on('click', function() {
+        if (!studentIdToDelete) return;
+
+        $.ajax({
+            url: 'delete_student.php',
+            type: 'POST',
+            data: {
+                student_id: studentIdToDelete
+            },
+            success: function(response) {
+                let res = JSON.parse(response);
+                if (res.success) {
+                    $('#confirmDeleteModal').modal('hide');
+                    $('#deleteSuccessModal').modal('show');
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + res.message);
+                }
+            },
+            error: function() {
+                alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            }
+        });
+    });
     </script>
 
 </body>

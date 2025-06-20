@@ -42,13 +42,14 @@ try {
         }
 
         // ตรวจสอบวิชา
-        $checkSubject = $pdo->prepare("SELECT id FROM subjects WHERE subject_name = ? AND class_level = ?");
-        $checkSubject->execute([$subject_name, $class_level]);
+        $checkSubject = $pdo->prepare("SELECT id FROM subjects WHERE subject_name = ? AND class_level = ? AND academic_year = ?");
+        $checkSubject->execute([$subject_name, $class_level, $academic_year]);
+
         $subject = $checkSubject->fetch();
 
         if (!$subject) {
-            $insertSubject = $pdo->prepare("INSERT INTO subjects (subject_name, class_level) VALUES (?, ?)");
-            $insertSubject->execute([$subject_name, $class_level]);
+            $insertSubject = $pdo->prepare("INSERT INTO subjects (subject_name, class_level, academic_year) VALUES (?, ?, ?)");
+            $insertSubject->execute([$subject_name, $class_level, $academic_year]);
             $subject_id = $pdo->lastInsertId();
         } else {
             $subject_id = $subject['id'];

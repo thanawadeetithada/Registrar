@@ -12,6 +12,7 @@ if (!isset($data['subject'], $data['classLevel'], $data['grades'])) {
 $subject = $data['subject'];
 $classLevel = $data['classLevel'];
 $grades = $data['grades'];
+$academicYear = $data['academicYear'] ?? null;
 $id = $data['id'] ?? null;
 
 try {
@@ -31,8 +32,9 @@ try {
         }
     } else {
         // ✅ INSERT ใหม่
-        $stmt = $pdo->prepare("INSERT INTO subjects (subject_name, class_level) VALUES (?, ?)");
-        $stmt->execute([$subject, $classLevel]);
+        $stmt = $pdo->prepare("INSERT INTO subjects (subject_name, class_level, academic_year) VALUES (?, ?, ?)");
+        $stmt->execute([$subject, $classLevel, $academicYear]);
+
         $subjectId = $pdo->lastInsertId();
 
         $stmtAdd = $pdo->prepare("INSERT INTO grade_ranges (subject_id, min_score, max_score, grade) VALUES (?, ?, ?, ?)");

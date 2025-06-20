@@ -16,11 +16,13 @@ foreach ($subjects as $subject) {
 
     // สร้าง object วิชา พร้อมเกรด
     $result[] = [
-        "id" => $subject["id"],  // ✅ ต้องใส่ id ด้วย!
-        "subject_name" => $subject["subject_name"],
-        "class_level" => $subject["class_level"],
-        "grades" => $grades
-    ];
+    "id" => $subject["id"],
+    "subject_name" => $subject["subject_name"],
+    "class_level" => $subject["class_level"],
+    "academic_year" => $subject["academic_year"], // ✅ เพิ่มบรรทัดนี้
+    "grades" => $grades
+];
+
 }
 
 echo json_encode($result);

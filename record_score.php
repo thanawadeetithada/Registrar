@@ -62,7 +62,7 @@ $subjects = $subjects_query->fetchAll(PDO::FETCH_ASSOC);
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #004085 !important;padding-left: 2rem;">
-        <a class="navbar-brand" href="index.php">ระบบจัดการนักเรียน</a>
+        <a class="navbar-brand" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -70,6 +70,9 @@ $subjects = $subjects_query->fetchAll(PDO::FETCH_ASSOC);
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
@@ -102,7 +105,42 @@ $subjects = $subjects_query->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
         <br>
+        <?php if (empty($academic_years)): ?>
+        <div class="card" style="border: none;">
+            <div class="card-body text-center text-muted"
+                style="padding: 2rem;background: #cfd8e5;border-radius: 10px;">
+                <h5><i class="fas fa-info-circle"></i> ไม่พบข้อมูลนักเรียนในระบบ</h5>
+            </div>
+        </div>
+        <?php else: ?>
+
         <?php foreach ($academic_years as $academic_year): 
+    $filteredSubjects = [];
+
+    foreach ($subjects as $subject) {
+    $students_query = $pdo->prepare("
+        SELECT DISTINCT s.*
+        FROM students s
+        WHERE s.class_level = :class_level
+          AND s.academic_year = :academic_year
+    ");
+    $students_query->execute([
+        'class_level' => $subject['class_level'],
+        'academic_year' => $subject['academic_year']
+    ]);
+    $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
+
+    if (count($students) > 0) {
+        $filteredSubjects[] = [
+            'subject' => $subject,
+            'students' => $students
+        ];
+    }
+}
+
+    // ✅ ข้ามการแสดง card ถ้าไม่มีวิชาหรือคะแนนเลย
+    if (empty($filteredSubjects)) continue;
+ 
     $previous_subject_name = ''; 
     $previous_class_level = ''; 
     $previous_classroom = ''; 
@@ -126,36 +164,24 @@ $subjects = $subjects_query->fetchAll(PDO::FETCH_ASSOC);
                     </thead>
                     <tbody>
                         <?php
-                        foreach ($subjects as $subject):
-                            $students_query = $pdo->prepare("
-    SELECT DISTINCT s.*
-    FROM students s
-    JOIN student_scores sc ON s.student_id = sc.student_id
-    WHERE s.class_level = :class_level
-      AND s.academic_year = :academic_year
-      AND sc.subject_id = :subject_id
-");
-$students_query->execute([
-    'class_level' => $subject['class_level'],
-    'academic_year' => $academic_year['academic_year'],
-    'subject_id' => $subject['id']
-]);
+foreach ($filteredSubjects as $entry):
+    $subject = $entry['subject'];
+    $students = $entry['students'];
 
-                            $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
-                            
-                            foreach ($students as $student):
-                                $is_subject_duplicate = ($previous_subject_name === $subject['subject_name'] && 
-                                                        $previous_class_level === $subject['class_level'] && 
-                                                        $previous_academic_year === $academic_year['academic_year']);
-                                
-                                if (
-    $previous_academic_year !== $academic_year['academic_year'] ||
-    $previous_class_level !== $subject['class_level'] ||
-    $previous_classroom !== $student['classroom'] ||
-    $previous_subject_name !== $subject['subject_name']
-)
-:
-                        ?>
+    foreach ($students as $student):
+        $is_subject_duplicate = (
+            $previous_subject_name === $subject['subject_name'] &&
+            $previous_class_level === $subject['class_level'] &&
+            $previous_academic_year === $academic_year['academic_year']
+        );
+
+        if (
+            $previous_academic_year !== $academic_year['academic_year'] ||
+            $previous_class_level !== $subject['class_level'] ||
+            $previous_classroom !== $student['classroom'] ||
+            $previous_subject_name !== $subject['subject_name']
+        ):
+?>
                         <tr>
                             <td class="subject-name">
                                 <?php echo $is_subject_duplicate ? '' : $subject['subject_name']; ?></td>
@@ -165,23 +191,25 @@ $students_query->execute([
                                 <a href="classroom.php?academic_year=<?php echo $academic_year['academic_year']; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&subject_id=<?php echo $subject['id']; ?>&class_level=<?php echo $subject['class_level']; ?>&classroom=<?php echo $student['classroom']; ?>"
                                     class="btn btn-primary"
                                     onclick="console.log('subject_id:', <?php echo $subject['id']; ?>)">กรอกคะแนน</a>
-
                             </td>
                         </tr>
                         <?php
-                            endif;
-                                $previous_subject_name = $subject['subject_name'];      
-                                $previous_class_level = $subject['class_level'];
-                                $previous_classroom = $student['classroom'];
-                                $previous_academic_year = $academic_year['academic_year'];
-                            endforeach;
-                        endforeach;
-                        ?>
+        endif;
+
+        $previous_subject_name = $subject['subject_name'];
+        $previous_class_level = $subject['class_level'];
+        $previous_classroom = $student['classroom'];
+        $previous_academic_year = $academic_year['academic_year'];
+    endforeach;
+endforeach;
+?>
                     </tbody>
+
                 </table>
             </div>
         </div>
         <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 
     <!-- Success Modal -->

@@ -17,7 +17,7 @@
 
     .card {
         padding: 1rem;
-        border-radius: 10px;
+        border: none;
     }
 
     .button-group {
@@ -52,7 +52,7 @@
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #004085 !important;padding-left: 2rem;">
-        <a class="navbar-brand" href="index.php">ระบบจัดการนักเรียน</a>
+        <a class="navbar-brand" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -60,6 +60,9 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link active" href="index.php">บันทึกข้อมูลนักเรียน <span
                             class="sr-only">(current)</span></a>
@@ -118,6 +121,7 @@
                                 <label>คำนำหน้า</label>
                                 <select class="form-control" name="prefix" required>
                                     <option disabled selected>-- เลือกคำนำหน้า --</option>
+                                    <option value="สามเณร">สามเณร</option>
                                     <option value="เด็กชาย">เด็กชาย</option>
                                     <option value="เด็กหญิง">เด็กหญิง</option>
                                     <option value="นาย">นาย</option>
