@@ -1,4 +1,5 @@
 <?php
+ob_start();
 require 'vendor/autoload.php';
 require_once 'db.php';
 
@@ -8,7 +9,7 @@ header('Content-Type: application/json');
 
 try {
     if ($_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception("ไฟล์มีปัญหาในการอัปโหลด");
+        throw new Exception("ไฟล์มีปัญหาในการอัปโหลด: " . $_FILES['file']['error']);
     }
 
     $file = $_FILES['file']['tmp_name'];
@@ -19,58 +20,80 @@ try {
     unset($rows[0]); // ข้ามหัวตาราง
 
     $inserted = 0;
+    $subjectErrors = [];
 
     foreach ($rows as $row) {
-        if (count($row) < 12) continue; // ตรวจสอบว่าข้อมูลครบ
+        if (count($row) < 11) continue;
 
-        [$no, $academic_year, $class_level, $classroom, $citizen_id, $student_id,
-         $prefix, $student_name, $birth_date, $subject_name, $s1_score, $s2_score] = $row;
+        [$academic_year, $class_level, $classroom, $citizen_id, $student_id,
+         $prefix, $student_name, $birth_date, $subject_id_str, $s1_score, $s2_score] = $row;
 
-        if (!$subject_name || !$class_level) continue;
+        if (!$subject_id_str || !$class_level) continue;
 
         // ตรวจว่านักเรียนมีอยู่หรือยัง
-        $checkStudent = $pdo->prepare("SELECT id FROM students WHERE student_id = ?");
-        $checkStudent->execute([$student_id]);
-        if (!$checkStudent->fetch()) {
-            $insertStudent = $pdo->prepare("INSERT INTO students 
+        $checkStudent = $conn->prepare("SELECT id FROM students WHERE student_id = ?");
+        $checkStudent->bind_param("s", $student_id);
+        $checkStudent->execute();
+        $checkStudentResult = $checkStudent->get_result();
+        if ($checkStudentResult->num_rows === 0) {
+            $insertStudent = $conn->prepare("INSERT INTO students 
                 (academic_year, class_level, classroom, citizen_id, student_id, prefix, student_name, birth_date)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $insertStudent->execute([
-                $academic_year, $class_level, $classroom, $citizen_id, $student_id,
-                $prefix, $student_name, date('Y-m-d', strtotime($birth_date))
-            ]);
+            $insertStudent->bind_param("ssssssss", $academic_year, $class_level, $classroom, $citizen_id, $student_id,
+                                       $prefix, $student_name, date('Y-m-d', strtotime($birth_date)));
+            if (!$insertStudent->execute()) {
+                throw new Exception("ไม่สามารถบันทึกข้อมูลนักเรียน: " . $insertStudent->error);
+            }
         }
 
-        // ตรวจสอบวิชา
-        $checkSubject = $pdo->prepare("SELECT id FROM subjects WHERE subject_name = ? AND class_level = ? AND academic_year = ?");
-        $checkSubject->execute([$subject_name, $class_level, $academic_year]);
+        // ตรวจสอบวิชา (จาก subject_id)
+        $checkSubject = $conn->prepare("SELECT id FROM subjects WHERE subject_id = ? AND class_level = ? AND academic_year = ?");
+        $checkSubject->bind_param("sss", $subject_id_str, $class_level, $academic_year);
+        $checkSubject->execute();
+        $checkSubjectResult = $checkSubject->get_result();
 
-        $subject = $checkSubject->fetch();
-
-        if (!$subject) {
-            $insertSubject = $pdo->prepare("INSERT INTO subjects (subject_name, class_level, academic_year) VALUES (?, ?, ?)");
-            $insertSubject->execute([$subject_name, $class_level, $academic_year]);
-            $subject_id = $pdo->lastInsertId();
-        } else {
-            $subject_id = $subject['id'];
+        if ($checkSubjectResult->num_rows === 0) {
+            $subjectErrors[] = [
+                'student_name' => $student_name,
+                'subject_id' => $subject_id_str
+            ];
+            continue;
         }
+
+        $subject = $checkSubjectResult->fetch_assoc();
+        $subject_id = $subject['id'];
 
         // เพิ่มคะแนน
-        $insertScore = $pdo->prepare("
+        $insertScore = $conn->prepare("
             INSERT INTO student_scores (subject_id, academic_year, semester1_score, semester2_score, grade, student_id)
             VALUES (?, ?, ?, ?, NULL, ?)
             ON DUPLICATE KEY UPDATE 
                 semester1_score = VALUES(semester1_score), 
                 semester2_score = VALUES(semester2_score)
         ");
-        $insertScore->execute([$subject_id, $academic_year, $s1_score, $s2_score, $student_id]);
+        $insertScore->bind_param("isdds", $subject_id, $academic_year, $s1_score, $s2_score, $student_id);
+        if (!$insertScore->execute()) {
+            throw new Exception("ไม่สามารถบันทึกข้อมูลคะแนน: " . $insertScore->error);
+        }
 
         $inserted++;
     }
 
-    echo json_encode(["success" => true, "inserted" => $inserted]);
-} catch (Exception $e) {
-    echo json_encode(["success" => false, "message" => $e->getMessage()]);
-}
+    ob_end_clean();
 
+    if (!empty($subjectErrors)) {
+        echo json_encode([
+            "success" => false,
+            "message" => "รหัสวิชาไม่พบในระบบ",
+            "invalid_subjects" => $subjectErrors
+        ]);
+        exit;
+    }
+
+    echo json_encode(["success" => true, "inserted" => $inserted]);
+
+} catch (Exception $e) {
+    ob_end_clean(); 
+    echo json_encode(["success" => false, "message" => "เกิดข้อผิดพลาด: " . $e->getMessage()]);
+}
 ?>

@@ -1,11 +1,47 @@
 <?php
 require_once 'db.php';  // เชื่อมต่อฐานข้อมูล
 
-$academic_year_query = $pdo->query("SELECT DISTINCT academic_year FROM students ORDER BY academic_year DESC");
-$academic_years = $academic_year_query->fetchAll(PDO::FETCH_ASSOC);
+$academic_years = [];
+$academic_year_query = $conn->query("SELECT DISTINCT academic_year FROM students ORDER BY academic_year DESC");
+if ($academic_year_query) {
+    while ($row = $academic_year_query->fetch_assoc()) {
+        $academic_years[] = $row;
+    }
+}
 
-$subjects_query = $pdo->query("SELECT * FROM subjects");
-$subjects = $subjects_query->fetchAll(PDO::FETCH_ASSOC);
+$subjects = [];
+$groupedData = [];
+
+// JOIN subjects กับ students โดยใช้ class_level + academic_year
+$sql = "
+    SELECT 
+        s.id AS student_id, s.classroom, s.class_level, s.academic_year, 
+        s.student_name, 
+        sub.id AS subject_id, sub.subject_name, sub.class_level AS subject_class_level
+    FROM students s
+    INNER JOIN subjects sub ON s.class_level = sub.class_level AND s.academic_year = sub.academic_year
+    ORDER BY s.academic_year DESC, s.class_level, s.classroom, sub.subject_name
+";
+$result = $conn->query($sql);
+
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        $year = $row['academic_year'];
+        $level = $row['subject_class_level'];
+        $room = $row['classroom'];
+        $subjectName = $row['subject_name'];
+        $subjectId = $row['subject_id'];
+
+        // จัดกลุ่มตามปี > วิชา > ห้อง
+        $groupedData[$year][$subjectId][$room]['subject_name'] = $subjectName;
+        $groupedData[$year][$subjectId][$room]['class_level'] = $level;
+        $groupedData[$year][$subjectId][$room]['students'][] = [
+            'student_id' => $row['student_id'],
+            'student_name' => $row['student_name'],
+            'classroom' => $room
+        ];
+    }
+}
 
 ?>
 
@@ -92,15 +128,10 @@ $subjects = $subjects_query->fetchAll(PDO::FETCH_ASSOC);
         <br>
         <div class="button-group">
             <div class="export-button">
-                <div class="export-button">
-                    <a href="export_scoresall.php" class="btn btn-primary">ดาวน์โหลด</a>
-                </div>
-
+                <a href="export_scoresall.php" class="btn btn-primary">ดาวน์โหลด</a>
             </div>
             <div class="import-button">
-                <button id="uploadButton" class="btn btn-success" style="padding-bottom: 7px;padding-top: 7px;">
-                    นำเข้าคะแนนนักเรียน
-                </button>
+                <button id="uploadButton" class="btn btn-success"> นำเข้าคะแนนนักเรียน </button>
                 <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
             </div>
         </div>
@@ -113,45 +144,10 @@ $subjects = $subjects_query->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
         <?php else: ?>
-
-        <?php foreach ($academic_years as $academic_year): 
-    $filteredSubjects = [];
-
-    foreach ($subjects as $subject) {
-    $students_query = $pdo->prepare("
-        SELECT DISTINCT s.*
-        FROM students s
-        WHERE s.class_level = :class_level
-          AND s.academic_year = :academic_year
-    ");
-    $students_query->execute([
-        'class_level' => $subject['class_level'],
-        'academic_year' => $subject['academic_year']
-    ]);
-    $students = $students_query->fetchAll(PDO::FETCH_ASSOC);
-
-    if (count($students) > 0) {
-        $filteredSubjects[] = [
-            'subject' => $subject,
-            'students' => $students
-        ];
-    }
-}
-
-    // ✅ ข้ามการแสดง card ถ้าไม่มีวิชาหรือคะแนนเลย
-    if (empty($filteredSubjects)) continue;
- 
-    $previous_subject_name = ''; 
-    $previous_class_level = ''; 
-    $previous_classroom = ''; 
-    $previous_academic_year = ''; 
-?>
-
-        <!-- แสดงปีการศึกษา -->
+        <?php if (!empty($groupedData)): ?>
+        <?php foreach ($groupedData as $year => $subjects): ?>
         <div class="card">
-            <div class="card-header">
-                ปีการศึกษา <?php echo $academic_year['academic_year']; ?>
-            </div>
+            <div class="card-header"> ปีการศึกษา <?= htmlspecialchars($year) ?> </div>
             <div class="card-body">
                 <table class="table table-bordered">
                     <thead>
@@ -163,52 +159,33 @@ $subjects = $subjects_query->fetchAll(PDO::FETCH_ASSOC);
                         </tr>
                     </thead>
                     <tbody>
-                        <?php
-foreach ($filteredSubjects as $entry):
-    $subject = $entry['subject'];
-    $students = $entry['students'];
-
-    foreach ($students as $student):
-        $is_subject_duplicate = (
-            $previous_subject_name === $subject['subject_name'] &&
-            $previous_class_level === $subject['class_level'] &&
-            $previous_academic_year === $academic_year['academic_year']
-        );
-
-        if (
-            $previous_academic_year !== $academic_year['academic_year'] ||
-            $previous_class_level !== $subject['class_level'] ||
-            $previous_classroom !== $student['classroom'] ||
-            $previous_subject_name !== $subject['subject_name']
-        ):
-?>
+                        <?php foreach ($subjects as $subjectId => $rooms): ?>
+                        <?php foreach ($rooms as $room => $data): ?>
                         <tr>
-                            <td class="subject-name">
-                                <?php echo $is_subject_duplicate ? '' : $subject['subject_name']; ?></td>
-                            <td><?php echo $subject['class_level']; ?></td>
-                            <td><?php echo $student['classroom']; ?></td>
+                            <td class="subject-name"><?= htmlspecialchars($data['subject_name']) ?></td>
+                            <td><?= htmlspecialchars($data['class_level']) ?></td>
+                            <td><?= htmlspecialchars(string: (string) $room) ?></td>
                             <td>
-                                <a href="classroom.php?academic_year=<?php echo $academic_year['academic_year']; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&subject_id=<?php echo $subject['id']; ?>&class_level=<?php echo $subject['class_level']; ?>&classroom=<?php echo $student['classroom']; ?>"
-                                    class="btn btn-primary"
-                                    onclick="console.log('subject_id:', <?php echo $subject['id']; ?>)">กรอกคะแนน</a>
+                                <a href="classroom.php?academic_year=<?= urlencode($year) ?>&subject_name=<?= urlencode($data['subject_name']) ?>&subject_id=<?= $subjectId ?>&class_level=<?= urlencode($data['class_level']) ?>&classroom=<?= urlencode($room) ?>"
+                                    class="btn btn-primary">กรอกคะแนน</a>
                             </td>
                         </tr>
-                        <?php
-        endif;
-
-        $previous_subject_name = $subject['subject_name'];
-        $previous_class_level = $subject['class_level'];
-        $previous_classroom = $student['classroom'];
-        $previous_academic_year = $academic_year['academic_year'];
-    endforeach;
-endforeach;
-?>
+                        <?php endforeach; ?>
+                        <?php endforeach; ?>
                     </tbody>
-
                 </table>
             </div>
         </div>
         <?php endforeach; ?>
+        <?php else: ?>
+        <div class="card" style="border: none;">
+            <div class="card-body text-center text-muted"
+                style="padding: 2rem;background: #cfd8e5;border-radius: 10px;">
+                <h5><i class="fas fa-info-circle"></i> ไม่พบข้อมูลนักเรียนในระบบ</h5>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <?php endif; ?>
     </div>
 
@@ -227,21 +204,39 @@ endforeach;
         </div>
     </div>
 
+    <!-- Error Modal -->
+    <div class="modal fade" id="importErrorModal" tabindex="-1" role="dialog" aria-labelledby="importErrorModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="importErrorModalLabel">พบรหัสวิชาที่ไม่ถูกต้อง</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>มีนักเรียนบางคนที่ไม่สามารถเพิ่มคะแนนได้ เนื่องจากไม่พบรหัสวิชาในระบบ</p>
+                    <div id="errorSubjectList" class="pl-3"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
     <script>
     document.getElementById('uploadButton').addEventListener('click', function() {
         document.getElementById('uploadExcel').click();
     });
-
     document.getElementById('uploadExcel').addEventListener('change', function() {
         const file = this.files[0];
         if (!file) return;
-
         const formData = new FormData();
         formData.append('file', file);
-
         fetch('import_scoresall.php', {
                 method: 'POST',
                 body: formData
@@ -252,17 +247,24 @@ endforeach;
                     document.getElementById('modalMessage').innerHTML =
                         `นำเข้าคะแนนสำเร็จแล้ว<br>(${result.inserted} รายการ)`;
                     $('#importSuccessModal').modal('show');
+                } else if (result.invalid_subjects) {
+                    // แสดง modal รายชื่อที่ error
+                   const html = result.invalid_subjects.map(s =>
+            `<div>- ${s.student_name} <strong>(รหัสวิชา: ${s.subject_id})</strong></div>`
+        ).join('');
+        document.getElementById('errorSubjectList').innerHTML = html;
+        $('#importErrorModal').modal('show');
                 } else {
                     alert('เกิดข้อผิดพลาด: ' + result.message);
                 }
             })
+
             .catch(error => {
                 console.error('Upload failed:', error);
                 alert('ไม่สามารถอัปโหลดไฟล์ได้: ' + error);
             });
     });
     </script>
-
 </body>
 
 </html>

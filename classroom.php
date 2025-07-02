@@ -1,59 +1,75 @@
 <?php
 require_once 'db.php';  // เชื่อมต่อฐานข้อมูล
 
-// ดึงข้อมูลจาก URL
-$academic_year = $_GET['academic_year'] ?? ''; // ตรวจสอบค่า academic_year
-$subject_name = $_GET['subject_name'] ?? '';  // ตรวจสอบค่า subject_name
-$class_level = $_GET['class_level'] ?? '';  // ตรวจสอบค่า class_level
-$classroom = $_GET['classroom'] ?? '';  // ตรวจสอบค่า classroom
+// รับค่าจาก URL
+$academic_year = $_GET['academic_year'] ?? '';
+$subject_name = $_GET['subject_name'] ?? '';
+$class_level = $_GET['class_level'] ?? '';
+$classroom = $_GET['classroom'] ?? '';
 
-// ดึงข้อมูลนักเรียนและวิชาตามค่าที่ส่งมา
-$students_query = $pdo->prepare("SELECT * FROM students WHERE class_level = :class_level AND classroom = :classroom AND academic_year = :academic_year");
-$students_query->execute([
-    'class_level' => $class_level,
-    'classroom' => $classroom,
-    'academic_year' => $academic_year
-]);
-$students = $students_query->fetchAll(PDO::FETCH_ASSOC);
+// ดึงข้อมูลวิชา ต้องได้ก่อน
+$subject = null;
+$subject_query = $conn->prepare("SELECT * FROM subjects WHERE subject_name = ?");
+$subject_query->bind_param("s", $subject_name);
+$subject_query->execute();
+$subject_result = $subject_query->get_result();
+$subject = $subject_result->fetch_assoc();
 
-$subject_query = $pdo->prepare("SELECT * FROM subjects WHERE subject_name = :subject_name");
-$subject_query->execute(['subject_name' => $subject_name]);
-$subject = $subject_query->fetch(PDO::FETCH_ASSOC);
+// ดึงข้อมูลนักเรียนที่เคยมีการบันทึกคะแน้น
+$students = [];
+if ($subject) {
+    $students_query = $conn->prepare("SELECT s.*
+        FROM students s
+        INNER JOIN student_scores sc 
+            ON s.student_id = sc.student_id 
+            AND sc.subject_id = ? 
+            AND sc.academic_year = ?
+        WHERE s.class_level = ? 
+            AND s.classroom = ? 
+            AND s.academic_year = ?");
+    $students_query->bind_param("issss", $subject['id'], $academic_year, $class_level, $classroom, $academic_year);
+    $students_query->execute();
+    $students_result = $students_query->get_result();
+    $students = $students_result->fetch_all(MYSQLI_ASSOC);
+}
 
-$scores_query = $pdo->prepare("
-    SELECT * FROM student_scores
-    WHERE academic_year = :academic_year AND subject_id = :subject_id
-");
-$scores_query->execute([
-    'academic_year' => $academic_year,
-    'subject_id' => $subject['id'] // สมมติว่า $subject ถูกดึงข้อมูลและมี id
-]);
-$scores = $scores_query->fetchAll(PDO::FETCH_ASSOC);
+// ดึงคะแนนและเกรด
+$scores = [];
+$grade_ranges = [];
+if ($subject) {
+    $scores_query = $conn->prepare("SELECT * FROM student_scores WHERE academic_year = ? AND subject_id = ?");
+    $scores_query->bind_param("ii", $academic_year, $subject['id']);
+    $scores_query->execute();
+    $scores_result = $scores_query->get_result();
+    $scores = $scores_result->fetch_all(MYSQLI_ASSOC);
 
+    $grade_query = $conn->prepare("SELECT * FROM grade_ranges WHERE subject_id = ? ORDER BY min_score DESC");
+    $grade_query->bind_param("i", $subject['id']);
+    $grade_query->execute();
+    $grade_result = $grade_query->get_result();
+    $grade_ranges = $grade_result->fetch_all(MYSQLI_ASSOC);
+}
 
-$grade_query = $pdo->prepare("SELECT * FROM grade_ranges WHERE subject_id = :subject_id ORDER BY min_score DESC");
-$grade_query->execute(['subject_id' => $subject['id']]);
-$grade_ranges = $grade_query->fetchAll(PDO::FETCH_ASSOC);
-
-// คำนวณคะแนนรวมและเกรด
-foreach ($students as $student) {
-    // กรองข้อมูลคะแนนของนักเรียนแต่ละคน
-    $student_score = array_filter($scores, function($score) use ($student) {
+// คำนวณคะแนนรวม และ เกรด
+foreach ($students as &$student) {
+    $student_score = array_filter($scores, function ($score) use ($student) {
         return $score['student_id'] == $student['student_id'];
     });
-    $student_score = reset($student_score); // เอาคะแนนที่ตรงกับนักเรียนมาใช้
+    $student_score = reset($student_score);
 
     $total_score = ($student_score['semester1_score'] ?? 0) + ($student_score['semester2_score'] ?? 0);
+    $student['total_score'] = $total_score;
 
-    // คำนวณเกรดจากฐานข้อมูล
-    $grade = 'F'; // กำหนดเกรดเริ่มต้นเป็น F
+    $grade = 'F';
     foreach ($grade_ranges as $range) {
         if ($total_score >= $range['min_score'] && $total_score <= $range['max_score']) {
             $grade = $range['grade'];
             break;
         }
     }
-    // ... (โค้ดที่ใช้แสดงผลคะแนนและเกรด)
+    $student['grade'] = $grade;
+    $student['semester1_score'] = $student_score['semester1_score'] ?? '';
+    $student['semester2_score'] = $student_score['semester2_score'] ?? '';
 }
 ?>
 
@@ -144,13 +160,7 @@ foreach ($students as $student) {
                     </a>
                 </button>
             </div>
-            <div class="import-button">
-                <button id="uploadButton" class="btn btn-success" style="padding-bottom: 7px;padding-top: 7px;">
-                    นำเข้าคะแนนนักเรียน
-                </button>
-                <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
 
-            </div>
         </div>
         <br>
         <div class="card">
@@ -290,7 +300,7 @@ foreach ($students as $student) {
             <div class="modal-content">
                 <div class="modal-body text-center p-4">
                     <h5 class="mb-3">คุณแน่ใจหรือไม่?</h5>
-                    <p>ต้องการลบนักเรียนคนนี้ออกจากระบบ (รวมคะแนน)?</p>
+                    <p>ต้องการลบนักเรียนคนนี้ออกจากระบบ?</p>
                     <button type="button" class="btn btn-danger" id="confirmDeleteBtn">ลบ</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
                 </div>
@@ -298,15 +308,15 @@ foreach ($students as $student) {
         </div>
     </div>
 
-    <!-- Modal แจ้งเตือนสำเร็จ -->
+
+    <!-- Modal แจ้งลบสำเร็จ -->
     <div class="modal fade" id="deleteSuccessModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-body text-center p-4">
                     <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
                     <h5>ลบนักเรียนเรียบร้อยแล้ว</h5>
-                    <button type="button" class="btn btn-success mt-3" data-dismiss="modal"
-                        onclick="location.reload()">ปิด</button>
+                    <button type="button" class="btn btn-success mt-3" id="closeDeleteSuccessModal">ปิด</button>
                 </div>
             </div>
         </div>
@@ -317,7 +327,7 @@ foreach ($students as $student) {
     <script>
     $(document).ready(function() {
         $('form').on('submit', function(event) {
-            event.preventDefault(); // ป้องกันการรีเฟรชหน้าเว็บโดยอัตโนมัติ
+            event.preventDefault(); // ✅ บล็อกการ submit ปกติ
             var form = $(this);
 
             // ส่งข้อมูลฟอร์มไปยังเซิร์ฟเวอร์
@@ -326,8 +336,10 @@ foreach ($students as $student) {
                 url: form.attr('action'),
                 data: form.serialize(),
                 success: function(response) {
-                    // เมื่อบันทึกสำเร็จ แสดง Modal
                     $('#saveSuccessModal').modal('show');
+                    setTimeout(function() {
+                        window.location.href = 'record_score.php';
+                    }, 1500);
                 },
                 error: function() {
                     alert('เกิดข้อผิดพลาด!');
@@ -373,11 +385,13 @@ foreach ($students as $student) {
 
     let studentIdToDelete = null;
 
+    // เมื่อกดปุ่มไอคอนลบ
     $('.delete-student').on('click', function() {
         studentIdToDelete = $(this).data('student-id');
         $('#confirmDeleteModal').modal('show');
     });
 
+    // เมื่อยืนยันการลบ
     $('#confirmDeleteBtn').on('click', function() {
         if (!studentIdToDelete) return;
 
@@ -387,11 +401,19 @@ foreach ($students as $student) {
             data: {
                 student_id: studentIdToDelete
             },
+            dataType: 'json',
             success: function(response) {
-                let res = JSON.parse(response);
+                let res = response;
                 if (res.success) {
-                    $('#confirmDeleteModal').modal('hide');
-                    $('#deleteSuccessModal').modal('show');
+                    $('#confirmDeleteModal')
+                        .one('hidden.bs.modal', function() {
+                            console.log('>> ลบสำเร็จ เตรียมเปิด deleteSuccessModal');
+
+                            $('#deleteSuccessModal').modal('show');
+                            console.log('>> ปิด deleteSuccessModal แล้วกำลัง redirect');
+
+                        })
+                        .modal('hide');
                 } else {
                     alert('เกิดข้อผิดพลาด: ' + res.message);
                 }
@@ -400,6 +422,15 @@ foreach ($students as $student) {
                 alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
             }
         });
+    });
+
+    // เมื่อกดปุ่มปิดใน modal ลบสำเร็จ → redirect ไป record_score.php
+    $('#deleteSuccessModal').on('hidden.bs.modal', function() {
+        window.location.href = 'record_score.php';
+    });
+
+    $('#closeDeleteSuccessModal').on('click', function() {
+        window.location.href = 'record_score.php';
     });
     </script>
 

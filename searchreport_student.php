@@ -1,7 +1,5 @@
 <?php
 require_once 'db.php';  // เชื่อมต่อฐานข้อมูล
-
-
 ?>
 
 <!DOCTYPE html>
@@ -43,6 +41,10 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
     .table-bordered td,
     .table-bordered th {
         border: 1px solid #1b1e21;
+    }
+
+    .clickable-row {
+        cursor: pointer;
     }
     </style>
 </head>
@@ -95,6 +97,14 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
+    // ทำให้แถวในตารางสามารถคลิกเพื่อไปยังหน้า report_student.php ได้
+    $(document).on('click', '.clickable-row', function() {
+        const studentId = $(this).data('id');
+        if (studentId) {
+            window.location.href = 'report_student.php?student_id=' + encodeURIComponent(studentId);
+        }
+    });
+
     $(document).ready(function() {
         $('#searchBtn').click(function() {
             var searchValue = $('#searchInput').val().trim();
@@ -106,7 +116,7 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
             }
 
             $.ajax({
-                url: 'search_student.php',
+                url: 'search_student.php', // เปลี่ยนไปใช้ search_student.php
                 method: 'POST',
                 data: {
                     search: searchValue
@@ -121,6 +131,7 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
                 }
             });
         });
+
         $('#searchInput').keypress(function(event) {
             if (event.key === "Enter") {
                 $('#searchBtn').click();
@@ -128,8 +139,6 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
         });
     });
     </script>
-
-
 </body>
 
 </html>

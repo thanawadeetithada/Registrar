@@ -14,10 +14,9 @@ $headers = [
     'ปีการศึกษา', 'ระดับชั้น', 'ห้อง', 'รหัสนักเรียน', 'ชื่อนักเรียน',
     'ชื่อวิชา', 'คะแนนภาค 1', 'คะแนนภาค 2', 'รวมคะแนน', 'เกรด'
 ];
-
 $sheet->fromArray($headers, NULL, 'A1');
 
-// ดึงข้อมูลจาก student_scores ร่วมกับ students และ subjects
+// SQL query
 $sql = "
 SELECT 
     s.academic_year,
@@ -36,12 +35,15 @@ JOIN subjects sub ON sub.id = sc.subject_id
 ORDER BY s.academic_year DESC, s.class_level, s.classroom, sub.subject_name
 ";
 
-$stmt = $pdo->query($sql);
-$data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$result = $conn->query($sql);
+
+if (!$result) {
+    die("Query failed: " . $conn->error);
+}
 
 // เติมข้อมูลลง Excel
 $row = 2;
-foreach ($data as $record) {
+while ($record = $result->fetch_assoc()) {
     $sheet->fromArray(array_values($record), NULL, "A{$row}");
     $row++;
 }

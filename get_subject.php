@@ -10,9 +10,11 @@ if (!isset($_GET['id'])) {
 $id = intval($_GET['id']);
 
 // ดึงข้อมูลวิชา
-$stmt = $pdo->prepare("SELECT * FROM subjects WHERE id = ?");
-$stmt->execute([$id]);
-$subject = $stmt->fetch(PDO::FETCH_ASSOC);
+$stmt = $conn->prepare("SELECT * FROM subjects WHERE id = ?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+$subject = $result->fetch_assoc();
 
 if (!$subject) {
     echo json_encode(['success' => false, 'message' => 'Subject not found']);
@@ -20,9 +22,15 @@ if (!$subject) {
 }
 
 // ดึงช่วงเกรด
-$stmt2 = $pdo->prepare("SELECT * FROM grade_ranges WHERE subject_id = ?");
-$stmt2->execute([$id]);
-$grades = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+$stmt2 = $conn->prepare("SELECT * FROM grade_ranges WHERE subject_id = ?");
+$stmt2->bind_param("i", $id);
+$stmt2->execute();
+$result2 = $stmt2->get_result();
+
+$grades = [];
+while ($row = $result2->fetch_assoc()) {
+    $grades[] = $row;
+}
 
 $subject['grades'] = $grades;
 

@@ -1,5 +1,6 @@
 <?php
 require_once 'db.php';
+header('Content-Type: application/json');
 
 $student_id = $_POST['student_id'] ?? '';
 
@@ -10,20 +11,25 @@ if (!$student_id) {
 
 try {
     // เริ่ม transaction
-    $pdo->beginTransaction();
+    $conn->begin_transaction();
 
     // ลบคะแนนของนักเรียนนี้
-    $deleteScores = $pdo->prepare("DELETE FROM student_scores WHERE student_id = :student_id");
-    $deleteScores->execute(['student_id' => $student_id]);
+    $deleteScores = $conn->prepare("DELETE FROM student_scores WHERE student_id = ?");
+    $deleteScores->bind_param("s", $student_id);
+    $deleteScores->execute();
 
     // ลบนักเรียนออกจากระบบ
-    $deleteStudent = $pdo->prepare("DELETE FROM students WHERE student_id = :student_id");
-    $deleteStudent->execute(['student_id' => $student_id]);
+    $deleteStudent = $conn->prepare("DELETE FROM students WHERE student_id = ?");
+    $deleteStudent->bind_param("s", $student_id);
+    $deleteStudent->execute();
 
-    $pdo->commit();
+    // ยืนยันการทำงานใน transaction
+    $conn->commit();
 
     echo json_encode(['success' => true]);
 } catch (Exception $e) {
-    $pdo->rollBack();
+    // ยกเลิกการทำงานในกรณีที่เกิดข้อผิดพลาด
+    $conn->rollback();
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
+?>

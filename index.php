@@ -153,6 +153,11 @@
                                 </table>
                             </div>
 
+                            <div class="form-group" id="subjectSwitches" style="display: none;">
+                                <label>เลือกวิชาที่เรียน</label>
+                                <div id="subjectSwitchContainer"></div>
+                            </div>
+
                             <div class="btn-form">
                                 <button type="submit" class="btn btn-primary">บันทึกข้อมูล</button>
                                 <button type="reset" class="btn btn-danger">ยกเลิก</button>
@@ -178,9 +183,9 @@
         </div>
     </div>
 
-    <!-- Modal for Success -->
-    <div class="modal fade" id="saveSuccessModal" tabindex="-1" role="dialog" aria-labelledby="saveSuccessModalLabel"
-        aria-hidden="true">
+    <!-- Modal for Success จากการ import excel -->
+    <div class="modal fade" id="importSuccessModal" tabindex="-1" role="dialog"
+        aria-labelledby="importSuccessModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-body text-center p-4">
@@ -226,9 +231,63 @@
         </div>
     </div>
 
+    <div class="modal fade" id="invalidSubjectModal" tabindex="-1" role="dialog"
+        aria-labelledby="invalidSubjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fa fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5>ไม่พบรหัสวิชานี้</h5>
+                    <div id="invalidSubjectList" style="text-align: center; padding-left: 20px;"></div>
+                    <button type="button" class="btn btn-warning mt-3" data-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+    $('#classLevelSelect').on('change', function() {
+        const level = $(this).val();
+        if (!level) return;
+
+        // เคลียร์และซ่อน
+        $('#subjectSwitchContainer').empty();
+        $('#subjectSwitches').hide();
+
+        // เรียกวิชาตามระดับชั้น
+        $.ajax({
+            url: 'get_subjects_by_level.php',
+            method: 'GET',
+            data: {
+                class_level: level
+            },
+            success: function(subjects) {
+                if (subjects.length === 0) {
+                    $('#subjectSwitchContainer').html(
+                        '<p class="text-muted">ไม่มีวิชาสำหรับระดับชั้นนี้</p>');
+                    return;
+                }
+
+                subjects.forEach(subject => {
+                    const switchHTML = `
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="subject_${subject.id}" name="subjects[]" value="${subject.id}">
+                    <label class="custom-control-label" for="subject_${subject.id}">${subject.subject_name} (${subject.subject_id})</label>
+                </div>`;
+                    $('#subjectSwitchContainer').append(switchHTML);
+                });
+
+                $('#subjectSwitches').show();
+            },
+            error: function() {
+                $('#subjectSwitchContainer').html(
+                    '<p class="text-danger">ไม่สามารถโหลดรายวิชาได้</p>');
+            }
+        });
+    });
+
     $(document).ready(function() {
         $('#studentForm').on('submit', function(event) {
             // ตรวจสอบว่าเลือกระดับชั้นหรือไม่
@@ -245,15 +304,14 @@
                 url: 'save_student.php',
                 type: 'POST',
                 data: formData,
-                success: function(response) {
-                    var data = JSON.parse(response);
+                dataType: 'json', // ✅ เพิ่มบรรทัดนี้
+                success: function(data) {
                     if (data.success) {
                         $('#saveSuccessModal').modal('show');
                     } else {
-                        // เช็คข้อผิดพลาดจาก PHP
-                        if (data.message == 'เลขบัตรประชาชนซ้ำในปีการศึกษานี้') {
+                        if (data.message === 'เลขบัตรประชาชนซ้ำในปีการศึกษานี้') {
                             $('#citizenIdModal').modal('show');
-                        } else if (data.message ==
+                        } else if (data.message ===
                             'รหัสประจำตัวนักเรียนซ้ำในปีการศึกษานี้') {
                             $('#studentIdModal').modal('show');
                         }
@@ -287,39 +345,50 @@
             data: formData,
             contentType: false,
             processData: false,
+            dataType: 'json',
             success: function(response) {
-                var data = JSON.parse(response);
+                var data = response;
                 if (data.success) {
-                    $('#saveSuccessModal').modal('show');
+                    $('#importSuccessModal').modal('show'); // ✅ modal สำหรับ import
                 } else {
-                    // ถ้ามีข้อผิดพลาด เช่น เลขบัตรประชาชนซ้ำหรือรหัสนักเรียนซ้ำ
+                    // ตรวจสอบ citizen_id ซ้ำ
                     if (data.duplicate_citizens.length > 0) {
-                        // แสดง Modal แจ้งเตือนเลขบัตรประชาชนซ้ำ พร้อมชื่อ-นามสกุล
-                        var names = '';
+                        let names = '';
                         data.duplicate_citizens.forEach(function(item) {
-                            names += '<p style="padding-left: 20px;margin-bottom: 5px;">ชื่อ : ' + item.student_name + '</p>';
+                            names +=
+                                '<p style="padding-left: 20px;margin-bottom: 5px;">ชื่อ : ' +
+                                item.student_name + '</p>';
                         });
                         $('#citizenIdModal').find('#studentName').html(names);
                         $('#citizenIdModal').modal('show');
-
-                        // หากพบว่าเลขบัตรประชาชนซ้ำแล้ว ให้ไม่ต้องแสดง Modal ของรหัสนักเรียนซ้ำ
-                        return; // ยุติการทำงานของฟังก์ชัน
+                        return;
                     }
 
+                    // ตรวจสอบ student_id ซ้ำ
                     if (data.duplicate_students.length > 0) {
-                        // แสดง Modal แจ้งเตือนรหัสนักเรียนซ้ำ พร้อมชื่อ-นามสกุล
-                        var names = '';
+                        let names = '';
                         data.duplicate_students.forEach(function(item) {
-                            // names += 'ชื่อ : ' + item.student_name + '<br>';
-                            names += '<p style="padding-left: 20px;margin-bottom: 5px;">ชื่อ : ' + item.student_name + '</p>';
-
+                            names +=
+                                '<p style="padding-left: 20px;margin-bottom: 5px;">ชื่อ : ' +
+                                item.student_name + '</p>';
                         });
-                       
                         $('#studentIdModal').find('#studentName').html(names);
                         $('#studentIdModal').modal('show');
                     }
+
+                    // ✅ ✅ ✅ ตรวจสอบ subject_id ที่ไม่ถูกต้อง
+                    if (data.invalid_subject_ids && data.invalid_subject_ids.length > 0) {
+                        let html = '';
+                        data.invalid_subject_ids.forEach(function(id) {
+                            html += '<p style="margin-bottom: 5px;">รหัสวิชา: ' + id +
+                                '</p>';
+                        });
+                        $('#invalidSubjectList').html(html);
+                        $('#invalidSubjectModal').modal('show');
+                    }
                 }
             },
+
             error: function() {
                 alert('ไม่สามารถติดต่อเซิร์ฟเวอร์ได้');
             }

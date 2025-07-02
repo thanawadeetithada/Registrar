@@ -1,19 +1,28 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
-    session_start(); 
+    session_start();
 }
-
+ ///ต่อกับ local database
 $servername = "localhost";
-$username = "root";
+$username = "root"; 
 $password = "";
 $dbname = "registrar";
 
 try {
-    $pdo = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8mb4", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die(json_encode([
-        "error" => "เชื่อมต่อฐานข้อมูลไม่สำเร็จ",
-        "details" => $e->getMessage()
-    ]));
+    $conn = new mysqli($servername, $username, $password, $dbname);
+
+    if ($conn->connect_error) {
+        throw new Exception("Connection failed: " . $conn->connect_error);
+    }
+
+    if (!$conn->set_charset("utf8")) {
+        throw new Exception("Error setting charset: " . $conn->error);
+    }
+
+} catch (Exception $e) {
+    die("Database connection error: " . $e->getMessage());
 }
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+?>

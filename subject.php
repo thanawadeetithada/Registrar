@@ -111,6 +111,12 @@
                     </div>
 
                     <div class="form-group">
+                        <label>รหัสวิชา</label>
+                        <input type="text" id="subjectID" class="form-control" placeholder="เช่น ค14521"
+                            autocomplete="off" required />
+                    </div>
+
+                    <div class="form-group">
                         <label>ชื่อวิชา</label>
                         <input type="text" id="subjectName" class="form-control" placeholder="เช่น คณิตศาสตร์"
                             autocomplete="off" required />
@@ -207,6 +213,7 @@
     function clearModal() {
         document.getElementById("subjectName").value = "";
         document.getElementById("academicYear").value = "";
+        document.getElementById("subjectID").value = "";
         document.getElementById("classLevel").selectedIndex = 0;
         document.getElementById("saveSubjectBtn").removeAttribute("data-id");
         document.querySelector("#gradeRangeTable tbody").innerHTML = "";
@@ -246,7 +253,7 @@
   <div class="card shadow-sm" style="padding: 20px;margin-top: 20px;margin-bottom: 20px;">
     <div class="card-header bg-infos text-white d-flex justify-content-between align-items-center">
       <div>
-        <strong>${subject.subject_name}</strong> | ${subject.class_level} | ปีการศึกษา ${subject.academic_year}
+            <strong>${subject.subject_name} (${subject.subject_id})</strong> | ${subject.class_level} | ปีการศึกษา ${subject.academic_year}
       </div>
     </div>
                 <div class="card-body" style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 10px;">
@@ -284,6 +291,8 @@
 
     function openAddModal() {
         document.getElementById("subjectName").value = "";
+        document.getElementById("subjectID").value = "";
+        document.getElementById("academicYear").value = "";
         document.getElementById("classLevel").selectedIndex = 0;
         document.querySelector("#gradeRangeTable tbody").innerHTML = "";
         document.getElementById("saveSubjectBtn").removeAttribute("data-id"); // ล้าง id (ป้องกัน update)
@@ -307,6 +316,7 @@
         const subjectName = document.getElementById("subjectName").value.trim();
         const classLevel = document.getElementById("classLevel").value;
         const academicYear = document.getElementById("academicYear").value.trim();
+        const subjectID = document.getElementById("subjectID").value.trim();
 
         if (!academicYear) {
             alert("กรุณากรอกปีการศึกษา");
@@ -353,6 +363,7 @@
                     subject: subjectName,
                     classLevel: classLevel,
                     academicYear: academicYear,
+                    subjectID: subjectID,
                     grades: gradeRanges
                 })
             })
@@ -361,6 +372,7 @@
                 if (data.success) {
                     $('#addSubjectModal').modal('hide');
                     document.getElementById("subjectName").value = "";
+                    document.getElementById("subjectID").value = "";
                     document.getElementById("classLevel").selectedIndex = 0;
                     document.getElementById("academicYear").value = "";
                     document.querySelector("#gradeRangeTable tbody").innerHTML = "";
@@ -395,6 +407,7 @@
             .then(res => res.json())
             .then(subject => {
                 console.log('subject', subject)
+                document.getElementById("subjectID").value = subject.subject_id;
                 document.getElementById("subjectName").value = subject.subject_name;
                 document.getElementById("classLevel").value = subject.class_level;
                 document.getElementById("academicYear").value = subject.academic_year || "";
