@@ -44,6 +44,32 @@ if ($student_id && $academic_year) {
     $scores = $result->fetch_all(MYSQLI_ASSOC);
 }
 
+$grade_ranges = [];
+$grade_query = $conn->prepare("SELECT * FROM grade_ranges ORDER BY subject_id, min_score DESC");
+$grade_query->execute();
+$grade_result = $grade_query->get_result();
+while ($row = $grade_result->fetch_assoc()) {
+    $grade_ranges[$row['subject_id']][] = $row;
+}
+
+// คำนวณเกรดใหม่จากคะแนนรวม
+foreach ($scores as &$score) {
+    $total = ($score['semester1_score'] ?? 0) + ($score['semester2_score'] ?? 0);
+    $score['total_score'] = $total;
+
+    $subject_id = $score['subject_id'];
+    $score['grade'] = '-'; // Default: ไม่มีเกรด
+
+    if (isset($grade_ranges[$subject_id])) {
+        foreach ($grade_ranges[$subject_id] as $range) {
+            if ($total >= $range['min_score'] && $total <= $range['max_score']) {
+                $score['grade'] = $range['grade'];
+                break;
+            }
+        }
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -87,7 +113,7 @@ if ($student_id && $academic_year) {
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #004085 !important;padding-left: 2rem;">
-        <a class="navbar-brand" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+        <a class="navbar-brand" href="searchreport_student.php">แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายบุคคล</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -96,11 +122,11 @@ if ($student_id && $academic_year) {
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน<span
-                            class="sr-only">(current)</span></a>
+                    <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
+                    <a class="nav-link active" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน<span
+                            class="sr-only">(current)</span></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="record_score.php">บันทึกคะแนน</a>
@@ -313,16 +339,6 @@ if ($student_id && $academic_year) {
             }
         });
     }
-
-    // function resetAfterSave() {
-    //     document.querySelectorAll('.editable-input').forEach(input => input.classList.add('d-none'));
-    //     document.querySelectorAll('.display-value').forEach(span => span.classList.remove('d-none'));
-
-    //     document.getElementById('saveBtn').classList.add('d-none');
-    //     document.getElementById('cancelBtn').classList.add('d-none');
-    //     document.getElementById('editBtn').classList.remove('d-none');
-    //     document.getElementById('deleteBtn').classList.remove('d-none');
-    // }
 
     $('#confirmDeleteBtn').click(function() {
         const studentId = '<?= $student_id ?>';

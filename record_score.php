@@ -12,7 +12,6 @@ if ($academic_year_query) {
 $subjects = [];
 $groupedData = [];
 
-// JOIN subjects กับ students โดยใช้ class_level + academic_year
 $sql = "
     SELECT 
         s.id AS student_id, s.classroom, s.class_level, s.academic_year, 
@@ -98,7 +97,7 @@ if ($result) {
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #004085 !important;padding-left: 2rem;">
-        <a class="navbar-brand" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+        <a class="navbar-brand" href="searchreport_student.php">บันทึกคะแนน</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -107,10 +106,10 @@ if ($result) {
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+                    <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
+                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link active" href="record_score.php">บันทึกคะแนน<span
@@ -129,10 +128,6 @@ if ($result) {
         <div class="button-group">
             <div class="export-button">
                 <a href="export_scoresall.php" class="btn btn-primary">ดาวน์โหลด</a>
-            </div>
-            <div class="import-button">
-                <button id="uploadButton" class="btn btn-success"> นำเข้าคะแนนนักเรียน </button>
-                <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
             </div>
         </div>
         <br>
@@ -249,11 +244,11 @@ if ($result) {
                     $('#importSuccessModal').modal('show');
                 } else if (result.invalid_subjects) {
                     // แสดง modal รายชื่อที่ error
-                   const html = result.invalid_subjects.map(s =>
-            `<div>- ${s.student_name} <strong>(รหัสวิชา: ${s.subject_id})</strong></div>`
-        ).join('');
-        document.getElementById('errorSubjectList').innerHTML = html;
-        $('#importErrorModal').modal('show');
+                    const html = result.invalid_subjects.map(s =>
+                        `<div>- ${s.student_name} <strong>(รหัสวิชา: ${s.subject_id})</strong></div>`
+                    ).join('');
+                    document.getElementById('errorSubjectList').innerHTML = html;
+                    $('#importErrorModal').modal('show');
                 } else {
                     alert('เกิดข้อผิดพลาด: ' + result.message);
                 }

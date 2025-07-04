@@ -71,7 +71,7 @@ if ($class_level && $academic_year && $student_id) {
                     <h5>เพิ่มรายวิชาให้นักเรียน: <?= htmlspecialchars($student_name) ?></h5>
                 </div>
                 <br>
-                <div class="card-body" style="margin-left: 2rem;">
+                <div class="card-body" style="margin-left: 2rem; margin-right: 2rem;">
                     <?php if (!empty($subjects)): ?>
                     <form method="POST" action="insert_subject_student.php" id="subjectForm">
                         <?php foreach ($subjects as $subject): 

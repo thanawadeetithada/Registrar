@@ -38,7 +38,7 @@
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style=" background-color: #004085 !important;padding-left: 2rem;">
-        <a class="navbar-brand" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+        <a class="navbar-brand" href="searchreport_student.php">เกรดแต่ละรายวิชา</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -46,11 +46,11 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
-                 <li class="nav-item">
-                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
-                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="record_score.php">บันทึกคะแนน</a>
@@ -238,7 +238,7 @@
                 <h5><i class="fas fa-info-circle"></i> ไม่พบข้อมูล</h5>
             </div>
         `;
-            return; // ✅ หยุดตรงนี้ถ้าไม่มีข้อมูล
+            return;
         }
 
         filtered.forEach(subject => {

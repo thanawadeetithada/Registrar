@@ -1,76 +1,36 @@
 <?php
-require_once 'db.php';  // เชื่อมต่อฐานข้อมูล
+require_once 'db.php';
 
 // รับค่าจาก URL
 $academic_year = $_GET['academic_year'] ?? '';
 $subject_name = $_GET['subject_name'] ?? '';
 $class_level = $_GET['class_level'] ?? '';
 $classroom = $_GET['classroom'] ?? '';
+$subject_id = $_GET['subject_id'] ?? '';
 
-// ดึงข้อมูลวิชา ต้องได้ก่อน
-$subject = null;
-$subject_query = $conn->prepare("SELECT * FROM subjects WHERE subject_name = ?");
-$subject_query->bind_param("s", $subject_name);
-$subject_query->execute();
-$subject_result = $subject_query->get_result();
-$subject = $subject_result->fetch_assoc();
-
-// ดึงข้อมูลนักเรียนที่เคยมีการบันทึกคะแน้น
 $students = [];
-if ($subject) {
-    $students_query = $conn->prepare("SELECT s.*
-        FROM students s
-        INNER JOIN student_scores sc 
-            ON s.student_id = sc.student_id 
-            AND sc.subject_id = ? 
-            AND sc.academic_year = ?
-        WHERE s.class_level = ? 
-            AND s.classroom = ? 
-            AND s.academic_year = ?");
-    $students_query->bind_param("issss", $subject['id'], $academic_year, $class_level, $classroom, $academic_year);
-    $students_query->execute();
-    $students_result = $students_query->get_result();
-    $students = $students_result->fetch_all(MYSQLI_ASSOC);
+
+if (!empty($subject_id) && !empty($academic_year)) {
+    $stmt = $conn->prepare("
+        SELECT 
+            ss.student_id, 
+            ss.semester1_score, 
+            ss.semester2_score, 
+            ss.total_score, 
+            ss.grade,
+            st.citizen_id, 
+            CONCAT(st.prefix, st.student_name) AS full_name
+        FROM student_scores ss
+        LEFT JOIN students st ON ss.student_id = st.student_id
+        WHERE ss.subject_id = ? AND ss.academic_year = ?
+        ORDER BY ss.student_id
+    ");
+    $stmt->bind_param("ii", $subject_id, $academic_year);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $students = $result->fetch_all(MYSQLI_ASSOC);
 }
 
-// ดึงคะแนนและเกรด
-$scores = [];
-$grade_ranges = [];
-if ($subject) {
-    $scores_query = $conn->prepare("SELECT * FROM student_scores WHERE academic_year = ? AND subject_id = ?");
-    $scores_query->bind_param("ii", $academic_year, $subject['id']);
-    $scores_query->execute();
-    $scores_result = $scores_query->get_result();
-    $scores = $scores_result->fetch_all(MYSQLI_ASSOC);
-
-    $grade_query = $conn->prepare("SELECT * FROM grade_ranges WHERE subject_id = ? ORDER BY min_score DESC");
-    $grade_query->bind_param("i", $subject['id']);
-    $grade_query->execute();
-    $grade_result = $grade_query->get_result();
-    $grade_ranges = $grade_result->fetch_all(MYSQLI_ASSOC);
-}
-
-// คำนวณคะแนนรวม และ เกรด
-foreach ($students as &$student) {
-    $student_score = array_filter($scores, function ($score) use ($student) {
-        return $score['student_id'] == $student['student_id'];
-    });
-    $student_score = reset($student_score);
-
-    $total_score = ($student_score['semester1_score'] ?? 0) + ($student_score['semester2_score'] ?? 0);
-    $student['total_score'] = $total_score;
-
-    $grade = 'F';
-    foreach ($grade_ranges as $range) {
-        if ($total_score >= $range['min_score'] && $total_score <= $range['max_score']) {
-            $grade = $range['grade'];
-            break;
-        }
-    }
-    $student['grade'] = $grade;
-    $student['semester1_score'] = $student_score['semester1_score'] ?? '';
-    $student['semester2_score'] = $student_score['semester2_score'] ?? '';
-}
 ?>
 
 <!DOCTYPE html>
@@ -123,7 +83,7 @@ foreach ($students as &$student) {
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #004085 !important;padding-left: 2rem;">
-        <a class="navbar-brand" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+        <a class="navbar-brand" href="searchreport_student.php">บันทึกคะแนน</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -132,10 +92,10 @@ foreach ($students as &$student) {
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+                    <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
+                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link active" href="record_score.php">บันทึกคะแนน<span
@@ -154,23 +114,29 @@ foreach ($students as &$student) {
         <div class="button-group">
             <div class="export-button">
                 <button class="btn btn-primary" style="padding: 0px !important;">
-                    <a href="export_scores.php?subject_id=<?php echo $subject['id']; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>"
+                    <a href="export_scores.php?subject_id=<?php echo $subject_id; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject_name ?? ''); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>"
                         class="btn btn-primary">
                         ดาวน์โหลด
                     </a>
                 </button>
+            </div>
+            <div class="import-button">
+                <button id="uploadButton" class="btn btn-success"> นำเข้าคะแนนนักเรียน </button>
+                <input type="file" id="uploadExcel" accept=".xlsx, .xls" class="d-none">
             </div>
 
         </div>
         <br>
         <div class="card">
             <div class="card-header">
-                ห้อง <?php echo $classroom; ?> วิชา <?php echo $subject['subject_name']; ?> ปีการศึกษา
-                <?php echo $academic_year; ?>
+                ห้อง <?php echo htmlspecialchars($classroom); ?>
+                วิชา <?php echo htmlspecialchars($subject_name); ?>
+                ปีการศึกษา <?php echo htmlspecialchars($academic_year); ?>
             </div>
+
             <div class="card-body">
                 <form method="POST"
-                    action="save_scores.php?subject_id=<?php echo $subject['id']; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject['subject_name']); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>">
+                    action="save_scores.php?subject_id=<?= $subject_id ?>&academic_year=<?= $academic_year ?>&subject_name=<?= urlencode($subject_name ?? '') ?>&class_level=<?= $class_level ?>&classroom=<?= $classroom ?>">
                     <div class="table-responsive">
                         <table class="table table-bordered">
                             <thead>
@@ -187,55 +153,29 @@ foreach ($students as &$student) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php
-    $count = 1;
-    foreach ($students as $student):
-        // กรองข้อมูลคะแนนของนักเรียนแต่ละคน
-        $student_score = array_filter($scores, function($score) use ($student) {
-            return $score['student_id'] == $student['student_id'];
-        });
-        $student_score = reset($student_score); // เอาคะแนนที่ตรงกับนักเรียนมาใช้
-
-        $total_score = ($student_score['semester1_score'] ?? 0) + ($student_score['semester2_score'] ?? 0);
-
-        // คำนวณเกรดจากฐานข้อมูล
-        $grade = 'ไม่มีเกรด'; // กำหนดเกรดเริ่มต้นเป็น F
-        foreach ($grade_ranges as $range) {
-            if ($total_score >= $range['min_score'] && $total_score <= $range['max_score']) {
-                $grade = $range['grade'];
-                break;
-            }
-        }
-    ?>
+                                <?php foreach ($students as $index => $s): ?>
                                 <tr>
-                                    <td><?php echo $count++; ?></td>
-                                    <td><?php echo $student['student_id']; ?></td>
-                                    <td><?php echo $student['citizen_id']; ?></td>
-                                    <td><?php echo $student['prefix'] . $student['student_name']; ?></td>
+                                    <td><?= $index + 1 ?></td>
+                                    <td><?= htmlspecialchars($s['student_id']) ?></td>
+                                    <td><?= htmlspecialchars($s['citizen_id'] ?? '—') ?></td>
+                                    <td><?= htmlspecialchars($s['full_name'] ?? '—') ?></td>
+
                                     <td>
-                                        <input type="number"
-                                            name="semester1_score[<?php echo $student['student_id']; ?>]"
-                                            value="<?php echo $student_score ? $student_score['semester1_score'] : ''; ?>"
+                                        <input type="number" name="semester1_score[<?= $s['student_id'] ?>]"
+                                            value="<?= htmlspecialchars($s['semester1_score'] ?? '') ?>"
                                             class="form-control" step="0.01">
                                     </td>
                                     <td>
-                                        <input type="number"
-                                            name="semester2_score[<?php echo $student['student_id']; ?>]"
-                                            value="<?php echo $student_score ? $student_score['semester2_score'] : ''; ?>"
+                                        <input type="number" name="semester2_score[<?= $s['student_id'] ?>]"
+                                            value="<?= htmlspecialchars($s['semester2_score'] ?? '') ?>"
                                             class="form-control" step="0.01">
                                     </td>
-                                    <td>
-                                        <?php echo $total_score; ?>
-                                    </td>
-                                    <td>
-                                        <?php echo $grade; ?>
-                                    </td>
+                                    <td><?= number_format($s['total_score'] ?? 0, 2) ?></td>
+                                    <td><?= $s['grade'] ?? 'ไม่มี' ?></td>
                                     <td>
                                         <button type="button" class="btn btn-danger btn-sm delete-student"
-                                            data-student-id="<?php echo $student['student_id']; ?>"
-                                            data-academic-year="<?php echo $academic_year; ?>"
-                                            data-classroom="<?php echo $classroom; ?>">
-                                            <i class="fas fa-trash-alt"></i>
+                                            data-student-id="<?= $s['student_id'] ?>">
+                                            <i class="fa fa-trash"></i>
                                         </button>
                                     </td>
                                 </tr>

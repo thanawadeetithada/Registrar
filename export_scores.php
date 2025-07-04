@@ -6,13 +6,14 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
-$academic_year = $_GET['academic_year'] ?? '';
-$subject_id = $_GET['subject_id'] ?? '';
+$academic_year = isset($_GET['academic_year']) ? (int) $_GET['academic_year'] : 0;
+$subject_id = isset($_GET['subject_id']) ? (int) $_GET['subject_id'] : 0;
 $subject_name = $_GET['subject_name'] ?? '';
 $class_level = $_GET['class_level'] ?? '';
 $classroom = $_GET['classroom'] ?? '';
 
 // ดึงข้อมูลนักเรียน
+while (ob_get_level()) ob_end_clean();
 $students_stmt = $conn->prepare("
     SELECT s.*
     FROM students s
@@ -81,12 +82,11 @@ foreach ($students as $student) {
     $row++;
 }
 
-$filename = "คะแนน_" . $subject_name . "_ปี_" . $academic_year . ".xlsx";
+$safe_name = "คะแนน_" . $subject_id . "_ปี_" . $academic_year . ".xlsx";
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-header("Content-Disposition: attachment;filename=\"$filename\"");
+header("Content-Disposition: attachment;filename=\"$safe_name\"");
 header('Cache-Control: max-age=0');
 
 $writer = new Xlsx($spreadsheet);
 $writer->save('php://output');
 exit;
-?>

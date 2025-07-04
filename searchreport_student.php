@@ -60,11 +60,11 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน<span
-                            class="sr-only">(current)</span></a>
+                    <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php">บันทึกข้อมูลนักเรียน</a>
+                    <a class="nav-link active" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน<span
+                            class="sr-only">(current)</span></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="record_score.php">บันทึกคะแนน</a>

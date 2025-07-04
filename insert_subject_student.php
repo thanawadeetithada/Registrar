@@ -10,7 +10,7 @@ if (!is_array($selected_subject_ids)) {
     $selected_subject_ids = [];
 }
 
-// 🔴 STEP 1: ลบวิชาที่เอาออก (ถ้ามี)
+// ลบวิชาที่เอาออก (ถ้ามี)
 if (!empty($removed_subject_ids)) {
     $ids_to_remove = explode(',', $removed_subject_ids);
 
@@ -21,7 +21,7 @@ if (!empty($removed_subject_ids)) {
     }
 }
 
-// 🟢 STEP 2: เพิ่ม/คงไว้เฉพาะวิชาที่ติ๊กอยู่
+// เพิ่ม/คงไว้เฉพาะวิชาที่ติ๊กอยู่
 foreach ($selected_subject_ids as $subject_id) {
     $stmt = $conn->prepare("
         INSERT INTO student_scores (student_id, subject_id, academic_year)
@@ -32,6 +32,6 @@ foreach ($selected_subject_ids as $subject_id) {
     $stmt->execute();
 }
 
-// ✅ กลับไปหน้ารายงาน
+// กลับไปหน้ารายงาน
 header("Location: report_student.php?student_id=" . urlencode($student_id));
 exit;

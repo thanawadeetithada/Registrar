@@ -52,7 +52,7 @@
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #004085 !important;padding-left: 2rem;">
-        <a class="navbar-brand" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
+        <a class="navbar-brand" href="searchreport_student.php">บันทึกข้อมูลนักเรียน</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -61,11 +61,11 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link active" href="index.php">บันทึกข้อมูลนักเรียน <span
                             class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="searchreport_student.php">ค้นหาข้อมูลนักเรียน</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="record_score.php">บันทึกคะแนน</a>
