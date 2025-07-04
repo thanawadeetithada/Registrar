@@ -100,8 +100,11 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
     // ทำให้แถวในตารางสามารถคลิกเพื่อไปยังหน้า report_student.php ได้
     $(document).on('click', '.clickable-row', function() {
         const studentId = $(this).data('id');
-        if (studentId) {
-            window.location.href = 'report_student.php?student_id=' + encodeURIComponent(studentId);
+        const academicYear = $(this).data('year');
+
+        if (studentId && academicYear) {
+            window.location.href = 'report_student.php?student_id=' + encodeURIComponent(studentId) +
+                '&academic_year=' + encodeURIComponent(academicYear);
         }
     });
 

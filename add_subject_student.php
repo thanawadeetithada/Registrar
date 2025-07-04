@@ -100,14 +100,14 @@ if ($class_level && $academic_year && $student_id) {
 
                         <div class="d-flex justify-content-end mt-3">
                             <button type="submit" class="btn btn-success me-2" id="saveBtn">บันทึกรายวิชา</button>
-                            <a href="report_student.php?student_id=<?= urlencode($student_id) ?>"
+                            <a href="report_student.php?student_id=<?= urlencode($student_id) ?>&academic_year=<?= urlencode($academic_year) ?>"
                                 class="btn btn-secondary">ยกเลิก</a>
                         </div>
                     </form>
                     <?php else: ?>
                     <div class="alert alert-info">ไม่มีรายวิชาในระบบสำหรับปี <?= htmlspecialchars($academic_year) ?>
                         และระดับ <?= htmlspecialchars($class_level) ?></div>
-                    <a href="report_student.php?student_id=<?= urlencode($student_id) ?>"
+                    <a href="report_student.php?student_id=<?= urlencode($student_id) ?>&academic_year=<?= urlencode($academic_year) ?>"
                         class="btn btn-secondary">ย้อนกลับ</a>
                     <?php endif; ?>
                 </div>
@@ -156,7 +156,7 @@ if ($class_level && $academic_year && $student_id) {
     });
 
     function redirectToStudentReport() {
-        window.location.href = 'report_student.php?student_id=<?= urlencode($student_id) ?>';
+       window.location.href = 'report_student.php?student_id=<?= urlencode($student_id) ?>&academic_year=<?= urlencode($academic_year) ?>';
 
     }
     </script>

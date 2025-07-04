@@ -36,7 +36,7 @@ if ($search) {
         
         // แสดงผลลัพธ์
         while ($student = $result->fetch_assoc()) {
-            echo '<tr class="clickable-row" data-id="' . htmlspecialchars($student['student_id']) . '">';
+            echo '<tr class="clickable-row" data-id="' . htmlspecialchars($student['student_id']) . '" data-year="' . htmlspecialchars($student['academic_year']) . '">';
             echo '<td>' . htmlspecialchars($student['student_id']) . '</td>';
             echo '<td>' . htmlspecialchars($student['citizen_id']) . '</td>';
             echo '<td>' . htmlspecialchars($student['prefix'] . ' ' . $student['student_name']) . '</td>';

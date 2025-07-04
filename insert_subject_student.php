@@ -33,5 +33,6 @@ foreach ($selected_subject_ids as $subject_id) {
 }
 
 // กลับไปหน้ารายงาน
-header("Location: report_student.php?student_id=" . urlencode($student_id));
+header("Location: report_student.php?student_id=" . urlencode($student_id) . "&academic_year=" . urlencode($academic_year));
 exit;
+

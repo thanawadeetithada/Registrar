@@ -4,7 +4,7 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
 $student_id = $_GET['student_id'] ?? null;
 $class_level = '';
 $classroom = '';
-$academic_year = '';
+$academic_year = $_GET['academic_year'] ?? null;  // เพิ่มบรรทัดนี้
 
 if ($student_id) {
     $stmt = $conn->prepare("SELECT class_level, classroom, academic_year, student_name, student_id FROM students WHERE student_id = ?");
@@ -16,7 +16,7 @@ if ($student_id) {
     if ($student) {
         $class_level = $student['class_level'];
         $classroom = $student['classroom'];
-        $academic_year = $student['academic_year'];
+        // $academic_year = $student['academic_year'];
         $student_id = $student['student_id'];
         $student_name = $student['student_name'];
     }
