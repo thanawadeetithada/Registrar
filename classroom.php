@@ -165,7 +165,7 @@ $stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom)
                                     <td><?= $index + 1 ?></td>
                                     <td><?= htmlspecialchars($s['student_id']) ?></td>
                                     <td><?= htmlspecialchars($s['citizen_id'] ?? '-') ?></td>
-<td><?= htmlspecialchars(($s['prefix'] ?? '') . ($s['student_name'] ?? '')) ?></td>
+                                    <td><?= htmlspecialchars(($s['prefix'] ?? '') . ($s['student_name'] ?? '')) ?></td>
 
 
                                     <td>
@@ -248,7 +248,7 @@ $stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom)
             <div class="modal-content">
                 <div class="modal-body text-center p-4">
                     <h5 class="mb-3">คุณแน่ใจหรือไม่?</h5>
-                    <p>ต้องการลบนักเรียนคนนี้ออกจากระบบ?</p>
+                    <p>ต้องการลบคะแนนนักเรียนคนนี้ออกจากระบบ?</p>
                     <button type="button" class="btn btn-danger" id="confirmDeleteBtn">ลบ</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
                 </div>
@@ -263,7 +263,7 @@ $stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom)
             <div class="modal-content">
                 <div class="modal-body text-center p-4">
                     <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                    <h5>ลบนักเรียนเรียบร้อยแล้ว</h5>
+                    <h5>ลบคะแนนนักเรียนเรียบร้อย</h5>
                     <button type="button" class="btn btn-success mt-3" id="closeDeleteSuccessModal">ปิด</button>
                 </div>
             </div>
@@ -340,14 +340,21 @@ $stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom)
     });
 
     // เมื่อยืนยันการลบ
+    // เมื่อยืนยันการลบ
     $('#confirmDeleteBtn').on('click', function() {
         if (!studentIdToDelete) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let subjectId = urlParams.get('subject_id');
+        let academicYear = urlParams.get('academic_year');
 
         $.ajax({
             url: 'delete_student.php',
             type: 'POST',
             data: {
-                student_id: studentIdToDelete
+                student_id: studentIdToDelete,
+                subject_id: subjectId,
+                academic_year: academicYear
             },
             dataType: 'json',
             success: function(response) {
@@ -355,11 +362,7 @@ $stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom)
                 if (res.success) {
                     $('#confirmDeleteModal')
                         .one('hidden.bs.modal', function() {
-                            console.log('>> ลบสำเร็จ เตรียมเปิด deleteSuccessModal');
-
                             $('#deleteSuccessModal').modal('show');
-                            console.log('>> ปิด deleteSuccessModal แล้วกำลัง redirect');
-
                         })
                         .modal('hide');
                 } else {
