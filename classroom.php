@@ -349,7 +349,7 @@ $stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom)
         let academicYear = urlParams.get('academic_year');
 
         $.ajax({
-            url: 'delete_student.php',
+            url: 'delete_student_subject.php',
             type: 'POST',
             data: {
                 student_id: studentIdToDelete,

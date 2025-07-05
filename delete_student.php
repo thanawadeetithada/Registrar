@@ -2,26 +2,25 @@
 require_once 'db.php';
 header('Content-Type: application/json');
 
-// รับค่าจาก POST
 $student_id = $_POST['student_id'] ?? '';
-$subject_id = $_POST['subject_id'] ?? '';
-$academic_year = $_POST['academic_year'] ?? '';
 
-if (!$student_id || !$subject_id || !$academic_year) {
-    echo json_encode(['success' => false, 'message' => 'ข้อมูลไม่ครบ']);
+if (!$student_id) {
+    echo json_encode(['success' => false, 'message' => 'ไม่มี student_id']);
     exit;
 }
 
 try {
     $conn->begin_transaction();
 
-    // ลบเฉพาะคะแนนของนักเรียนนี้ในวิชาและปีที่ระบุ
-    $deleteScores = $conn->prepare("
-        DELETE FROM student_scores 
-        WHERE student_id = ? AND subject_id = ? AND academic_year = ?
-    ");
-    $deleteScores->bind_param("sii", $student_id, $subject_id, $academic_year);
+    // 1. ลบจาก student_scores
+    $deleteScores = $conn->prepare("DELETE FROM student_scores WHERE student_id = ?");
+    $deleteScores->bind_param("s", $student_id);
     $deleteScores->execute();
+
+    // 2. ลบจาก students
+    $deleteStudent = $conn->prepare("DELETE FROM students WHERE student_id = ?");
+    $deleteStudent->bind_param("s", $student_id);
+    $deleteStudent->execute();
 
     $conn->commit();
 
