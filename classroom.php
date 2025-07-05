@@ -11,21 +11,28 @@ $subject_id = $_GET['subject_id'] ?? '';
 $students = [];
 
 if (!empty($subject_id) && !empty($academic_year)) {
-    $stmt = $conn->prepare("
-        SELECT 
-            ss.student_id, 
-            ss.semester1_score, 
-            ss.semester2_score, 
-            ss.total_score, 
-            ss.grade,
-            st.citizen_id, 
-            CONCAT(st.prefix, st.student_name) AS full_name
-        FROM student_scores ss
-        LEFT JOIN students st ON ss.student_id = st.student_id
-        WHERE ss.subject_id = ? AND ss.academic_year = ?
-        ORDER BY ss.student_id
-    ");
-    $stmt->bind_param("ii", $subject_id, $academic_year);
+  $stmt = $conn->prepare("
+    SELECT 
+        ss.student_id, 
+        ss.semester1_score, 
+        ss.semester2_score, 
+        ss.total_score, 
+        ss.grade,
+        s.citizen_id,
+        s.prefix,
+        s.student_name
+    FROM student_scores AS ss
+    INNER JOIN students AS s 
+        ON ss.student_id = s.student_id
+    WHERE 
+        ss.subject_id = ? 
+        AND ss.academic_year = ? 
+        AND s.class_level = ? 
+        AND s.classroom = ?
+");
+
+$stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom);
+
     $stmt->execute();
     $result = $stmt->get_result();
     $students = $result->fetch_all(MYSQLI_ASSOC);
@@ -157,8 +164,9 @@ if (!empty($subject_id) && !empty($academic_year)) {
                                 <tr>
                                     <td><?= $index + 1 ?></td>
                                     <td><?= htmlspecialchars($s['student_id']) ?></td>
-                                    <td><?= htmlspecialchars($s['citizen_id'] ?? '—') ?></td>
-                                    <td><?= htmlspecialchars($s['full_name'] ?? '—') ?></td>
+                                    <td><?= htmlspecialchars($s['citizen_id'] ?? '-') ?></td>
+<td><?= htmlspecialchars(($s['prefix'] ?? '') . ($s['student_name'] ?? '')) ?></td>
+
 
                                     <td>
                                         <input type="number" name="semester1_score[<?= $s['student_id'] ?>]"
