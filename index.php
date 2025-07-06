@@ -207,7 +207,7 @@
                     <h5>เลขบัตรประชาชนซ้ำ</h5>
                     <!-- ชื่อ-นามสกุลของนักเรียนที่ซ้ำจะมาแสดงที่นี่ -->
                     <div id="studentName" style="text-align: left; padding-left: 20px;"></div>
-                    <button type="button" class="btn btn-danger mt-3" data-dismiss="modal">ปิด</button>
+                    <button type="button" class="btn btn-danger mt-3" data-dismiss="modal" onclick="location.reload()">ปิด</button>
                 </div>
             </div>
         </div>
@@ -224,7 +224,7 @@
                     <h5>รหัสประจำตัวนักเรียนซ้ำ</h5>
                     <!-- แสดงชื่อ-นามสกุลของนักเรียนที่ซ้ำ -->
                     <div id="studentName" style="text-align: left; padding-left: 20px;"></div>
-                    <button type="button" class="btn btn-danger mt-3" data-dismiss="modal">ปิด</button>
+                    <button type="button" class="btn btn-danger mt-3" data-dismiss="modal" onclick="location.reload()">ปิด</button>
                 </div>
             </div>
         </div>
@@ -238,7 +238,7 @@
                     <i class="fa fa-exclamation-triangle fa-3x text-warning mb-3"></i>
                     <h5>ไม่พบรหัสวิชานี้</h5>
                     <div id="invalidSubjectList" style="text-align: center; padding-left: 20px;"></div>
-                    <button type="button" class="btn btn-warning mt-3" data-dismiss="modal">ปิด</button>
+                    <button type="button" class="btn btn-warning mt-3" data-dismiss="modal" onclick="location.reload()">ปิด</button>
                 </div>
             </div>
         </div>
