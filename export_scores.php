@@ -4,87 +4,75 @@ require_once 'db.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
-$academic_year = isset($_GET['academic_year']) ? (int) $_GET['academic_year'] : 0;
-$subject_id = isset($_GET['subject_id']) ? (int) $_GET['subject_id'] : 0;
-$subject_name = $_GET['subject_name'] ?? '';
-$class_level = $_GET['class_level'] ?? '';
-$classroom = $_GET['classroom'] ?? '';
+$subject_id = $_GET['subject_id'] ?? '';
+$academic_year = $_GET['academic_year'] ?? '';
 
-// ดึงข้อมูลนักเรียน
-while (ob_get_level()) ob_end_clean();
-$students_stmt = $conn->prepare("
-    SELECT s.*
-    FROM students s
-    INNER JOIN student_scores sc 
-        ON s.student_id = sc.student_id
-    WHERE s.class_level = ? 
-      AND s.classroom = ? 
-      AND s.academic_year = ? 
-      AND sc.subject_id = ?
+$stmt = $conn->prepare("
+    SELECT 
+        ss.student_id,
+        ss.semester1_score,
+        ss.semester2_score,
+        ss.total_score,
+        ss.grade,
+        s.citizen_id,
+        s.prefix,
+        s.student_name,
+        s.classroom
+    FROM student_scores AS ss
+    INNER JOIN students AS s 
+        ON ss.student_id = s.student_id
+        AND ss.academic_year = s.academic_year
+    WHERE ss.subject_id = ? AND ss.academic_year = ?
 ");
-$students_stmt->bind_param("ssii", $class_level, $classroom, $academic_year, $subject_id);
-$students_stmt->execute();
-$students_result = $students_stmt->get_result();
-$students = $students_result->fetch_all(MYSQLI_ASSOC);
+$stmt->bind_param("ii", $subject_id, $academic_year);
+$stmt->execute();
+$result = $stmt->get_result();
+$students = $result->fetch_all(MYSQLI_ASSOC);
 
-// ดึงคะแนนนักเรียน
-$scores_stmt = $conn->prepare("SELECT * FROM student_scores WHERE academic_year = ? AND subject_id = ?");
-$scores_stmt->bind_param("ii", $academic_year, $subject_id);
-$scores_stmt->execute();
-$scores_result = $scores_stmt->get_result();
-$scores = $scores_result->fetch_all(MYSQLI_ASSOC);
-
-// ดึงช่วงเกรด
-$grade_stmt = $conn->prepare("SELECT * FROM grade_ranges WHERE subject_id = ? ORDER BY min_score DESC");
-$grade_stmt->bind_param("i", $subject_id);
-$grade_stmt->execute();
-$grade_result = $grade_stmt->get_result();
-$grade_ranges = $grade_result->fetch_all(MYSQLI_ASSOC);
-
-// เริ่มสร้าง Excel
+// สร้างไฟล์ Excel
 $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getActiveSheet();
 
-$sheet->fromArray(['ลำดับ', 'รหัสนักเรียน', 'เลขบัตรประชาชน', 'ชื่อ', 'คะแนนเทอม 1', 'คะแนนเทอม 2', 'รวม', 'เกรด'], NULL, 'A1');
+// หัวตาราง
+$sheet->fromArray([
+    'ลำดับ',
+    'รหัสนักเรียน',
+    'เลขบัตรประชาชน',
+    'ชื่อ-นามสกุล',
+    'ห้อง',
+    'คะแนนภาคเรียนที่ 1',
+    'คะแนนภาคเรียนที่ 2',
+    'คะแนนรวม',
+    'เกรด'
+], null, 'A1');
 
-$row = 2;
-$count = 1;
-
-foreach ($students as $student) {
-    $student_score = array_filter($scores, function ($score) use ($student) {
-        return $score['student_id'] == $student['student_id'];
-    });
-    $student_score = reset($student_score);
-
-    $score1 = $student_score['semester1_score'] ?? 0;
-    $score2 = $student_score['semester2_score'] ?? 0;
-    $total = $score1 + $score2;
-
-    $grade = 'ไม่มีเกรด';
-    foreach ($grade_ranges as $range) {
-        if ($total >= $range['min_score'] && $total <= $range['max_score']) {
-            $grade = $range['grade'];
-            break;
-        }
-    }
-
-    $sheet->setCellValue('A' . $row, $count++);
-    $sheet->setCellValue('B' . $row, $student['student_id']);
-    $sheet->setCellValueExplicit('C' . $row, $student['citizen_id'], DataType::TYPE_STRING);
-    $sheet->setCellValue('D' . $row, $student['prefix'] . $student['student_name']);
-    $sheet->setCellValue('E' . $row, $score1);
-    $sheet->setCellValue('F' . $row, $score2);
-    $sheet->setCellValue('G' . $row, $total);
-    $sheet->setCellValue('H' . $row, $grade);
-
-    $row++;
+// เติมข้อมูลนักเรียน
+$rowNum = 2;
+foreach ($students as $index => $s) {
+    $sheet->setCellValue("A$rowNum", $index + 1);
+    $sheet->setCellValue("B$rowNum", $s['student_id']);
+    $sheet->setCellValue("C$rowNum", $s['citizen_id']);
+    $sheet->setCellValue("D$rowNum", ($s['prefix'] ?? '') . ($s['student_name'] ?? ''));
+    $sheet->setCellValue("E$rowNum", $s['classroom']);
+    $sheet->setCellValue("F$rowNum", $s['semester1_score']);
+    $sheet->setCellValue("G$rowNum", $s['semester2_score']);
+    $sheet->setCellValue("H$rowNum", $s['total_score']);
+    $sheet->setCellValue("I$rowNum", $s['grade']);
+    $rowNum++;
 }
 
-$safe_name = "คะแนน_" . $subject_id . "_ปี_" . $academic_year . ".xlsx";
+$subject_name = $_GET['subject_name'] ?? 'ไม่ทราบชื่อวิชา';
+
+// ลบอักขระพิเศษและเว้นวรรค → _
+$sanitized_subject_name = preg_replace('/[^\wก-๙]/u', '', $subject_name);
+
+$today = date('dmY');
+$filename = "คะแนน_" . $sanitized_subject_name . "_ปี" . $academic_year . "_" . $today . ".xlsx";
+
+
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-header("Content-Disposition: attachment;filename=\"$safe_name\"");
+header("Content-Disposition: attachment; filename=\"$filename\"");
 header('Cache-Control: max-age=0');
 
 $writer = new Xlsx($spreadsheet);

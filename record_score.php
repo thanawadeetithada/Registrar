@@ -27,17 +27,16 @@ if ($result) {
     while ($row = $result->fetch_assoc()) {
         $year = $row['academic_year'];
         $level = $row['subject_class_level'];
-        $room = $row['classroom'];
         $subjectName = $row['subject_name'];
         $subjectId = $row['subject_id'];
 
-        // จัดกลุ่มตามปี > วิชา > ห้อง
-        $groupedData[$year][$subjectId][$room]['subject_name'] = $subjectName;
-        $groupedData[$year][$subjectId][$room]['class_level'] = $level;
-        $groupedData[$year][$subjectId][$room]['students'][] = [
+    // แยกแค่ ปี → วิชา
+        $groupedData[$year][$subjectId]['subject_name'] = $subjectName;
+        $groupedData[$year][$subjectId]['class_level'] = $level;
+        $groupedData[$year][$subjectId]['students'][] = [
             'student_id' => $row['student_id'],
             'student_name' => $row['student_name'],
-            'classroom' => $room
+            'classroom' => $row['classroom']
         ];
     }
 }
@@ -149,23 +148,19 @@ if ($result) {
                         <tr>
                             <th>วิชา</th>
                             <th>ระดับชั้น</th>
-                            <th>ห้อง</th>
                             <th>กรอกคะแนน</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($subjects as $subjectId => $rooms): ?>
-                        <?php foreach ($rooms as $room => $data): ?>
+                        <?php foreach ($subjects as $subjectId => $data): ?>
                         <tr>
                             <td class="subject-name"><?= htmlspecialchars($data['subject_name']) ?></td>
                             <td><?= htmlspecialchars($data['class_level']) ?></td>
-                            <td><?= htmlspecialchars(string: (string) $room) ?></td>
                             <td>
-                                <a href="classroom.php?academic_year=<?= urlencode($year) ?>&subject_name=<?= urlencode($data['subject_name']) ?>&subject_id=<?= $subjectId ?>&class_level=<?= urlencode($data['class_level']) ?>&classroom=<?= urlencode($room) ?>"
+                                <a href="classroom.php?academic_year=<?= urlencode($year) ?>&subject_name=<?= urlencode($data['subject_name']) ?>&subject_id=<?= $subjectId ?>&class_level=<?= urlencode($data['class_level']) ?>"
                                     class="btn btn-primary">กรอกคะแนน</a>
                             </td>
                         </tr>
-                        <?php endforeach; ?>
                         <?php endforeach; ?>
                     </tbody>
                 </table>

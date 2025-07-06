@@ -5,7 +5,6 @@ require_once 'db.php';
 $academic_year = $_GET['academic_year'] ?? '';
 $subject_name = $_GET['subject_name'] ?? '';
 $class_level = $_GET['class_level'] ?? '';
-$classroom = $_GET['classroom'] ?? '';
 $subject_id = $_GET['subject_id'] ?? '';
 
 $students = [];
@@ -20,18 +19,20 @@ if (!empty($subject_id) && !empty($academic_year)) {
         ss.grade,
         s.citizen_id,
         s.prefix,
-        s.student_name
+        s.student_name,
+        s.classroom
     FROM student_scores AS ss
     INNER JOIN students AS s 
         ON ss.student_id = s.student_id
+        AND ss.academic_year = s.academic_year
     WHERE 
         ss.subject_id = ? 
         AND ss.academic_year = ? 
         AND s.class_level = ? 
-        AND s.classroom = ?
+ 
 ");
 
-$stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom);
+$stmt->bind_param("iis", $subject_id, $academic_year, $class_level);
 
     $stmt->execute();
     $result = $stmt->get_result();
@@ -121,7 +122,7 @@ $stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom)
         <div class="button-group">
             <div class="export-button">
                 <button class="btn btn-primary" style="padding: 0px !important;">
-                    <a href="export_scores.php?subject_id=<?php echo $subject_id; ?>&academic_year=<?php echo $academic_year; ?>&subject_name=<?php echo urlencode($subject_name ?? ''); ?>&class_level=<?php echo $class_level; ?>&classroom=<?php echo $classroom; ?>"
+                    <a href="export_scores.php?subject_id=<?= $subject_id ?>&academic_year=<?= $academic_year ?>&subject_name=<?= urlencode($subject_name ?? '') ?>&class_level=<?= $class_level ?>"
                         class="btn btn-primary">
                         ดาวน์โหลด
                     </a>
@@ -136,14 +137,13 @@ $stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom)
         <br>
         <div class="card">
             <div class="card-header">
-                ห้อง <?php echo htmlspecialchars($classroom); ?>
                 วิชา <?php echo htmlspecialchars($subject_name); ?>
                 ปีการศึกษา <?php echo htmlspecialchars($academic_year); ?>
             </div>
 
             <div class="card-body">
                 <form method="POST"
-                    action="save_scores.php?subject_id=<?= $subject_id ?>&academic_year=<?= $academic_year ?>&subject_name=<?= urlencode($subject_name ?? '') ?>&class_level=<?= $class_level ?>&classroom=<?= $classroom ?>">
+                    action="save_scores.php?subject_id=<?= $subject_id ?>&academic_year=<?= $academic_year ?>&subject_name=<?= urlencode($subject_name ?? '') ?>&class_level=<?= $class_level ?>">
                     <div class="table-responsive">
                         <table class="table table-bordered">
                             <thead>
@@ -152,6 +152,7 @@ $stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom)
                                     <th>รหัสประจำตัวนักเรียน</th>
                                     <th>เลขบัตรประชาชน</th>
                                     <th>ชื่อ-นามสกุล</th>
+                                    <th>ห้อง</th>
                                     <th>คะแนนภาคเรียนที่ 1</th>
                                     <th>คะแนนภาคเรียนที่ 2</th>
                                     <th>คะแนนรวม</th>
@@ -166,8 +167,7 @@ $stmt->bind_param("iiss", $subject_id, $academic_year, $class_level, $classroom)
                                     <td><?= htmlspecialchars($s['student_id']) ?></td>
                                     <td><?= htmlspecialchars($s['citizen_id'] ?? '-') ?></td>
                                     <td><?= htmlspecialchars(($s['prefix'] ?? '') . ($s['student_name'] ?? '')) ?></td>
-
-
+                                    <td><?= htmlspecialchars($s['classroom'] ?? '-') ?></td>
                                     <td>
                                         <input type="number" name="semester1_score[<?= $s['student_id'] ?>]"
                                             value="<?= htmlspecialchars($s['semester1_score'] ?? '') ?>"
