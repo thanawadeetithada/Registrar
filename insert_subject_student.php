@@ -1,6 +1,6 @@
 <?php
 require_once 'db.php';
-
+$id = $_POST['id'] ?? '';
 $student_id = $_POST['student_id'] ?? '';
 $academic_year = $_POST['academic_year'] ?? '';
 $selected_subject_ids = $_POST['subject_ids'] ?? []; // วิชาที่ยังติ๊กอยู่
@@ -33,6 +33,6 @@ foreach ($selected_subject_ids as $subject_id) {
 }
 
 // กลับไปหน้ารายงาน
-header("Location: report_student.php?student_id=" . urlencode($student_id) . "&academic_year=" . urlencode($academic_year));
+header("Location: report_student.php?id=" . urlencode($id));
 exit;
 

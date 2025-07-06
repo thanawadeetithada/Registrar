@@ -1,25 +1,36 @@
 <?php
 require_once 'db.php';  // เชื่อมต่อฐานข้อมูล
 
+$id = $_GET['id'] ?? null;
 $student_id = $_GET['student_id'] ?? null;
-$class_level = '';
-$classroom = '';
+$class_level = $_GET['class_level'] ?? null; 
+$classroom = $_GET['classroom'] ?? null; 
 $academic_year = $_GET['academic_year'] ?? null;  // เพิ่มบรรทัดนี้
 
-if ($student_id) {
-    $stmt = $conn->prepare("SELECT class_level, classroom, academic_year, student_name, student_id FROM students WHERE student_id = ?");
-    $stmt->bind_param("s", $student_id);  // ใช้ bind_param() เพื่อป้องกัน SQL Injection
+if ($id) {
+    $stmt = $conn->prepare("SELECT * FROM students WHERE id = ?");
+    $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
     $student = $result->fetch_assoc();
 
     if ($student) {
+        $student_id = $student['student_id'];
+        $academic_year = $student['academic_year'];
         $class_level = $student['class_level'];
         $classroom = $student['classroom'];
-        // $academic_year = $student['academic_year'];
-        $student_id = $student['student_id'];
         $student_name = $student['student_name'];
+        $prefix = $student['prefix'];
+        $citizen_id = $student['citizen_id'];
+        $birth_date = $student['birth_date'];
+    } else {
+        echo 'ไม่พบข้อมูลนักเรียน';
+        exit;
     }
+} else {
+    echo 'ไม่ได้รับค่า ID';
+    exit;
+
 }
 
 $scores = [];
@@ -28,6 +39,7 @@ if ($student_id && $academic_year) {
     $stmt = $conn->prepare("
     SELECT 
         subjects.id AS subject_id,
+        subjects.subject_id AS subject_ids,
         subjects.subject_name,
         student_scores.semester1_score,
         student_scores.semester2_score,
@@ -70,6 +82,8 @@ foreach ($scores as &$score) {
     }
 }
 
+$birth_date_display = $birth_date ? date('d-m-Y', strtotime($birth_date)) : '';
+
 ?>
 
 <!DOCTYPE html>
@@ -108,6 +122,10 @@ foreach ($scores as &$score) {
         justify-content: center;
         padding: 2rem 0;
     }
+
+    .lable-edit {
+        float: left;
+    }
     </style>
 </head>
 
@@ -142,7 +160,7 @@ foreach ($scores as &$score) {
         <div class="card shadow" style="max-width: 960px; width: 100%; background: #f7f9fc;">
             <div class="text-right mb-3 no-print">
                 <button class="btn btn-primary"
-                    onclick="window.location.href='add_subject_student.php?student_id=<?= urlencode($student_id) ?>&academic_year=<?= urlencode($academic_year) ?>'">
+                    onclick="window.location.href='add_subject_student.php?id=<?= urlencode($id) ?>&student_id=<?= urlencode($student_id) ?>&academic_year=<?= urlencode($academic_year) ?>'">
                     <i class="fa-solid fa-circle-plus"></i> เพิ่มรายวิชา
                 </button>
 
@@ -153,21 +171,91 @@ foreach ($scores as &$score) {
 
             <div class="card-body">
                 <h5 class="text-center font-weight-bold">แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายบุคคล</h5>
-                <p class="text-center mb-1">
+                <form id="studentInfoForm" class="text-center mb-1">
                     <?php if ($class_level && $classroom && $academic_year): ?>
-                    <?= htmlspecialchars($class_level) ?> ปีที่ <?= htmlspecialchars($classroom) ?> ปีการศึกษา
-                    <?= htmlspecialchars($academic_year) ?> <br>
-                    รหัสประจำตัวนักเรียน <?= htmlspecialchars($student_id) ?> ชื่อ
-                    <?= htmlspecialchars($student_name) ?>
+                    <div id="studentInfoView">
+                        <?= htmlspecialchars($class_level) ?> ปีที่ <?= htmlspecialchars($classroom) ?> ปีการศึกษา
+                        <?= htmlspecialchars($academic_year) ?><br>
+                        รหัสประจำตัวนักเรียน <?= htmlspecialchars($student_id) ?> ชื่อ
+                        <?= htmlspecialchars($prefix) ?><?= htmlspecialchars($student_name) ?><br>
+                        เลขบัตรประชาชน <?= htmlspecialchars($citizen_id) ?> วัน/เดือน/ปีเกิด
+                        <?= htmlspecialchars($birth_date_display) ?>
+                    </div>
+
+                    <div id="studentInfoEdit" class="d-none">
+                        <input type="hidden" name="id" value="<?= htmlspecialchars($id) ?>">
+                        <input type="hidden" name="student_id" value="<?= htmlspecialchars($student_id) ?>">
+                        <div class="row">
+                            <!-- คอลัมน์ซ้าย -->
+                            <div class="col-md-12">
+                                <?= htmlspecialchars($class_level) ?> ปีที่ <?= htmlspecialchars($classroom) ?>
+                                ปีการศึกษา <?= htmlspecialchars($academic_year) ?> รหัสประจำตัวนักเรียน
+                                <?= htmlspecialchars($student_id) ?>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="lable-edit">คำนำหน้า</label>
+                                    <select class="form-control mb-1" name="prefix" required>
+                                        <option disabled <?= $prefix ? '' : 'selected' ?>>-- เลือกคำนำหน้า --</option>
+                                        <option value="สามเณร" <?= $prefix === 'สามเณร' ? 'selected' : '' ?>>สามเณร
+                                        </option>
+                                        <option value="เด็กชาย" <?= $prefix === 'เด็กชาย' ? 'selected' : '' ?>>เด็กชาย
+                                        </option>
+                                        <option value="เด็กหญิง" <?= $prefix === 'เด็กหญิง' ? 'selected' : '' ?>>
+                                            เด็กหญิง</option>
+                                        <option value="นาย" <?= $prefix === 'นาย' ? 'selected' : '' ?>>นาย</option>
+                                        <option value="นางสาว" <?= $prefix === 'นางสาว' ? 'selected' : '' ?>>นางสาว
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="lable-edit">วัน/เดือน/ปีเกิด</label>
+                                    <input type="date" name="birth_date" value="<?= htmlspecialchars($birth_date) ?>"
+                                        class="form-control mb-1" placeholder="วันเกิด">
+                                </div>
+                            </div>
+
+                            <!-- คอลัมน์ขวา -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="lable-edit">เลขบัตรประชาชน</label>
+                                    <input type="text" name="citizen_id" value="<?= htmlspecialchars($citizen_id) ?>"
+                                        class="form-control mb-1" placeholder="เลขบัตรประชาชน">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="lable-edit">ชื่อ-นามสกุล</label>
+                                    <input type="text" name="student_name"
+                                        value="<?= htmlspecialchars($student_name) ?>" class="form-control mb-1"
+                                        placeholder="ชื่อ-นามสกุล">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
                     <?php else: ?>
                     ไม่พบข้อมูลนักเรียน
                     <?php endif; ?>
-                </p>
+                </form>
+                <div class="text-right mt-3 no-print">
+                    <button class="btn btn-info" id="editStudentBtn">
+                        <i class="fas fa-user-edit"></i> แก้ไขข้อมูลนักเรียน
+                    </button>
+                    <button class="btn btn-success d-none" id="saveStudentBtn" onclick="saveStudentInfo()">
+                        <i class="fas fa-save"></i> บันทึกข้อมูลนักเรียน
+                    </button>
+                    <button class="btn btn-secondary d-none" id="cancelStudentBtn" onclick="location.reload()">
+                        <i class="fas fa-times"></i> ยกเลิก
+                    </button>
 
+                </div>
                 <br>
                 <table class="table table-bordered text-center table-sm">
                     <thead class="thead-light">
                         <tr>
+                            <th rowspan="2" style="vertical-align: middle;">รหัสรายวิชา</th>
                             <th rowspan="2" style="vertical-align: middle;">กลุ่มสาระการเรียนรู้</th>
                             <th colspan="1">ภาคเรียนที่ 1</th>
                             <th colspan="1">ภาคเรียนที่ 2</th>
@@ -190,6 +278,7 @@ foreach ($scores as &$score) {
                     <tbody>
                         <?php foreach ($scores as $index => $row): ?>
                         <tr>
+                            <td><?= htmlspecialchars($row['subject_ids']) ?></td>
                             <td><?= htmlspecialchars($row['subject_name']) ?>
                                 <input type="hidden" name="subject_ids[]" value="<?= $row['subject_id'] ?>">
                             <td>
@@ -222,7 +311,7 @@ foreach ($scores as &$score) {
                 <div class="text-right mt-3 no-print">
                     <a href="edit_student.php?student_id=<?= urlencode($student_id) ?>" class="btn btn-warning"
                         id="editBtn">
-                        <i class="fas fa-edit"></i> แก้ไขข้อมูล
+                        <i class="fas fa-edit"></i> แก้ไขข้อมูลคะแนน
                     </a>
                     <button class="btn btn-danger" onclick="$('#confirmDeleteModal').modal('show')" id="deleteBtn">
                         <i class="fas fa-trash-alt"></i> ลบนักเรียน
@@ -277,6 +366,19 @@ foreach ($scores as &$score) {
         </div>
     </div>
 
+    <!-- MODAL: บันทึกข้อมูลนักเรียนสำเร็จ -->
+    <div class="modal fade" id="studentSaveSuccessModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5>บันทึกข้อมูลนักเรียนสำเร็จ</h5>
+                    <button type="button" class="btn btn-success mt-3" data-dismiss="modal"
+                        onclick="location.reload()">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -400,6 +502,36 @@ foreach ($scores as &$score) {
         </html>
     `);
         printWindow.document.close();
+    }
+
+    document.getElementById('editStudentBtn').addEventListener('click', function() {
+        document.getElementById('studentInfoView').classList.add('d-none');
+        document.getElementById('studentInfoEdit').classList.remove('d-none');
+
+        document.getElementById('editStudentBtn').classList.add('d-none');
+        document.getElementById('saveStudentBtn').classList.remove('d-none');
+        document.getElementById('cancelStudentBtn').classList.remove('d-none');
+    });
+
+    function saveStudentInfo() {
+        const form = document.getElementById('studentInfoForm');
+        const formData = new FormData(form);
+
+        formData.append('academic_year', '<?= $academic_year ?>');
+
+        $.ajax({
+            url: 'update_student_info.php',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(res) {
+                $('#studentSaveSuccessModal').modal('show');
+            },
+            error: function() {
+                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูลนักเรียน');
+            }
+        });
     }
     </script>
 </body>

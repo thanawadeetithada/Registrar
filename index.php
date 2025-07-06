@@ -103,7 +103,6 @@
                                     <option value="ชั้นประถมศึกษา">ชั้นประถมศึกษา</option>
                                     <option value="ชั้นมัธยมศึกษา">ชั้นมัธยมศึกษา</option>
                                 </select>
-
                             </div>
                             <div class="form-group">
                                 <label>ห้องเลขที่ <span>(ตัวอย่าง 1/3)</span></label>

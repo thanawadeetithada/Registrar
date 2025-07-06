@@ -1,6 +1,6 @@
 <?php
 require_once 'db.php';
-
+$id = $_GET['id'] ?? '';
 $student_id = $_GET['student_id'] ?? '';
 $academic_year = $_GET['academic_year'] ?? '';
 $class_level = '';
@@ -89,7 +89,7 @@ if ($class_level && $academic_year && $student_id) {
                             </label>
                         </div>
                         <?php endforeach; ?>
-
+                        <input type="hidden" name="id" value="<?= htmlspecialchars($id) ?>">
                         <input type="hidden" name="student_id" value="<?= htmlspecialchars($student_id) ?>">
                         <input type="hidden" name="academic_year" value="<?= htmlspecialchars($academic_year) ?>">
                         <input type="hidden" id="removed_subject_id" name="removed_subject_id">
@@ -100,15 +100,13 @@ if ($class_level && $academic_year && $student_id) {
 
                         <div class="d-flex justify-content-end mt-3">
                             <button type="submit" class="btn btn-success me-2" id="saveBtn">บันทึกรายวิชา</button>
-                            <a href="report_student.php?student_id=<?= urlencode($student_id) ?>&academic_year=<?= urlencode($academic_year) ?>"
-                                class="btn btn-secondary">ยกเลิก</a>
+                            <a href="report_student.php?id=<?= urlencode($id) ?>" class="btn btn-secondary">ยกเลิก</a>
                         </div>
                     </form>
                     <?php else: ?>
                     <div class="alert alert-info">ไม่มีรายวิชาในระบบสำหรับปี <?= htmlspecialchars($academic_year) ?>
                         และระดับ <?= htmlspecialchars($class_level) ?></div>
-                    <a href="report_student.php?student_id=<?= urlencode($student_id) ?>&academic_year=<?= urlencode($academic_year) ?>"
-                        class="btn btn-secondary">ย้อนกลับ</a>
+                    <a href="report_student.php?id=<?= urlencode($id) ?>" class="btn btn-secondary">ย้อนกลับ</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -122,14 +120,14 @@ if ($class_level && $academic_year && $student_id) {
                     <h5 class="mb-3">คุณแน่ใจหรือไม่?</h5>
                     <p>ต้องการลบรายวิชา <span id="modalSubjectName"></span> นี้ออกใช่ไหม?</p>
                     <button type="button" class="btn btn-danger" id="confirmDeleteBtn">ตกลง</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <!-- <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button> -->
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     let removedSubjectIds = [];
     let uncheckedSubject = null;
@@ -156,7 +154,7 @@ if ($class_level && $academic_year && $student_id) {
     });
 
     function redirectToStudentReport() {
-       window.location.href = 'report_student.php?student_id=<?= urlencode($student_id) ?>&academic_year=<?= urlencode($academic_year) ?>';
+        window.location.href = 'report_student.php?id=<?= urlencode($id) ?>';
 
     }
     </script>
