@@ -3,6 +3,7 @@ require 'vendor/autoload.php';
 require_once 'db.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 header('Content-Type: application/json');
 
@@ -13,6 +14,40 @@ $response = [
     'invalid_subject_ids' => []
 ];
 
+function normalize_date($input_date) {
+    if ($input_date instanceof \DateTime) {
+        return $input_date->format('Y-m-d');
+    }
+
+    if (is_numeric($input_date)) {
+        try {
+            $dateTime = Date::excelToDateTimeObject($input_date);
+            return $dateTime->format('Y-m-d');
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    $input_date = trim((string) $input_date);
+
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $input_date)) {
+        return $input_date;
+    }
+
+    if (preg_match('/^\d{2}-\d{2}-\d{4}$/', $input_date)) {
+        $parts = explode('-', $input_date);
+        return "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+    }
+
+    if (preg_match('/^\d{2}[-\/]\d{2}[-\/]\d{2}$/', $input_date)) {
+        [$day, $month, $year] = preg_split('/[-\/]/', $input_date);
+        $year = (intval($year) < 50) ? "20$year" : "19$year";
+        return "$year-$month-$day";
+    }
+
+    return null;
+}
+
 try {
     if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
         throw new Exception("ไม่พบไฟล์หรือเกิดข้อผิดพลาดในการอัปโหลด");
@@ -21,12 +56,14 @@ try {
     $file = $_FILES['file']['tmp_name'];
     $spreadsheet = IOFactory::load($file);
     $sheet = $spreadsheet->getActiveSheet();
-    $rows = $sheet->toArray();
+    $rows = $sheet->toArray(null, false, false, false);
+
 
     for ($i = 1; $i < count($rows); $i++) {
-      $row = array_map(function($v) {
-    return trim((string) ($v ?? ''));
-}, array_pad($rows[$i], 9, ''));
+        $row = array_map(function ($v) {
+            return trim((string) ($v ?? ''));
+        }, array_pad($rows[$i], 9, ''));
+
         [
             $academic_year,
             $class_level,
@@ -35,9 +72,11 @@ try {
             $student_id,
             $prefix,
             $student_name,
-            $birth_date,
+            $birth_date_raw,
             $subject_ids_string
         ] = $row;
+
+        $birth_date = normalize_date($birth_date_raw);
 
         // ตรวจสอบ citizen_id ซ้ำ
         $stmtCitizen = $conn->prepare("SELECT student_name FROM students WHERE academic_year = ? AND citizen_id = ?");
@@ -101,14 +140,12 @@ try {
         $response['success'] = true;
     }
 
-   ob_clean();
-echo json_encode($response);
-exit;
-
+    ob_clean();
+    echo json_encode($response);
+    exit;
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
         'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
     ]);
 }
-?>
