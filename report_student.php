@@ -120,7 +120,6 @@ $birth_date_display = $birth_date ? date('d-m-Y', strtotime($birth_date)) : '';
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2rem 0;
     }
 
     .lable-edit {
@@ -252,6 +251,7 @@ $birth_date_display = $birth_date ? date('d-m-Y', strtotime($birth_date)) : '';
 
                 </div>
                 <br>
+                 <div class="table-responsive">
                 <table class="table table-bordered text-center table-sm">
                     <thead class="thead-light">
                         <tr>
@@ -308,6 +308,7 @@ $birth_date_display = $birth_date ? date('d-m-Y', strtotime($birth_date)) : '';
                     </tbody>
 
                 </table>
+                </div>
                 <div class="text-right mt-3 no-print">
                     <a href="edit_student.php?student_id=<?= urlencode($student_id) ?>" class="btn btn-warning"
                         id="editBtn">
