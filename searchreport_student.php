@@ -1,5 +1,18 @@
 <?php
 require_once 'db.php';  // เชื่อมต่อฐานข้อมูล
+
+$academicYears = [];
+$classLevels = [];
+
+$resultYear = $conn->query("SELECT DISTINCT academic_year FROM students ORDER BY academic_year DESC");
+while ($row = $resultYear->fetch_assoc()) {
+    $academicYears[] = $row['academic_year'];
+}
+
+$resultLevel = $conn->query("SELECT DISTINCT class_level FROM students ORDER BY class_level ASC");
+while ($row = $resultLevel->fetch_assoc()) {
+    $classLevels[] = $row['class_level'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -46,6 +59,11 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
     .clickable-row {
         cursor: pointer;
     }
+
+    hr {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
     </style>
 </head>
 
@@ -88,6 +106,34 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
                         <button class="btn btn-primary" id="searchBtn">ค้นหา</button>
                     </div>
                 </div>
+                <div class="text-center">
+                    <button class="btn btn-primary" id="searchAllBtn">แสดงนักเรียนทั้งหมด</button>
+                </div>
+                <hr>
+                <div class="row mb-3 mt-3 justify-content-center">
+                    <div class="col-md-3">
+                        <select class="form-control" id="filterAcademicYear">
+                            <option value="">-- เลือกปีการศึกษา --</option>
+                            <?php foreach ($academicYears as $year): ?>
+                            <option value="<?= htmlspecialchars($year) ?>"><?= htmlspecialchars($year) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-control" id="filterClassLevel">
+                            <option value="">-- เลือกระดับชั้น --</option>
+                            <option value="ชั้นประถมศึกษา">ชั้นประถมศึกษา</option>
+                            <option value="ชั้นมัธยมศึกษา">ชั้นมัธยมศึกษา</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-3 text-center">
+                        <button class="btn btn-primary" id="filterSearchBtn">
+                            </i> ค้นหา
+                        </button>
+                    </div>
+                </div>
             </div>
             <div id="searchResult" class="mt-4"></div>
         </div>
@@ -103,7 +149,6 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
         if (studentId) {
             window.location.href = 'report_student.php?id=' + encodeURIComponent(studentId);
         }
-
     });
 
     $(document).ready(function() {
@@ -115,7 +160,8 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
                     '<div class="alert alert-danger text-center">กรุณากรอกข้อมูลสำหรับค้นหา</div>');
                 return;
             }
-
+            $('#filterAcademicYear').val('');
+            $('#filterClassLevel').val('');
             $.ajax({
                 url: 'search_student.php', // เปลี่ยนไปใช้ search_student.php
                 method: 'POST',
@@ -136,6 +182,47 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
         $('#searchInput').keypress(function(event) {
             if (event.key === "Enter") {
                 $('#searchBtn').click();
+            }
+        });
+    });
+
+    $('#searchAllBtn').click(function() {
+        $('#searchInput').val('');
+        $('#filterAcademicYear').val('');
+        $('#filterClassLevel').val('');
+        $.ajax({
+            url: 'get_all_students.php',
+            method: 'GET',
+            success: function(response) {
+                $('#searchResult').html(response);
+            },
+            error: function() {
+                $('#searchResult').html(
+                    '<div class="alert alert-danger text-center">เกิดข้อผิดพลาดในการโหลดข้อมูลนักเรียนทั้งหมด</div>'
+                );
+            }
+        });
+    });
+
+    $('#filterSearchBtn').click(function() {
+        $('#searchInput').val('');
+        const year = $('#filterAcademicYear').val();
+        const group = $('#filterClassLevel').val();
+
+        $.ajax({
+            url: 'get_all_students.php',
+            method: 'GET',
+            data: {
+                academic_year: year,
+                class_group: group
+            },
+            success: function(response) {
+                $('#searchResult').html(response);
+            },
+            error: function() {
+                $('#searchResult').html(
+                    '<div class="alert alert-danger text-center">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>'
+                );
             }
         });
     });

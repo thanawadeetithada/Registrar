@@ -1,0 +1,63 @@
+<?php
+require_once 'db.php';
+
+$academicYear = $_GET['academic_year'] ?? '';
+$classGroup = $_GET['class_group'] ?? ''; // รับค่าจาก dropdown: ชั้นประถมศึกษา, ชั้นมัธยมศึกษา
+
+$where = [];
+$params = [];
+$types = '';
+
+// เงื่อนไขปีการศึกษา
+if (!empty($academicYear)) {
+    $where[] = 'academic_year = ?';
+    $params[] = $academicYear;
+    $types .= 'i';
+}
+
+if (!empty($classGroup)) {
+    $where[] = "class_level = ?";
+    $params[] = $classGroup;
+    $types .= 's';
+}
+
+$sql = "SELECT id, student_id, student_name, prefix, class_level, classroom, academic_year FROM students";
+if ($where) {
+    $sql .= ' WHERE ' . implode(' AND ', $where);
+}
+$sql .= " ORDER BY class_level, student_name";
+
+$stmt = $conn->prepare($sql);
+if ($types !== '') {
+    $stmt->bind_param($types, ...$params);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    echo '<div class="table-responsive">';
+    echo '<table class="table table-bordered table-hover">';
+    echo '<thead class="thead-dark">';
+    echo '<tr>
+            <th>รหัสนักเรียน</th>
+            <th>ชื่อ-นามสกุล</th>
+            <th>ระดับชั้น</th>
+            <th>ห้อง</th>
+            <th>ปีการศึกษา</th>
+          </tr>';
+    echo '</thead><tbody>';
+    while ($row = $result->fetch_assoc()) {
+        echo '<tr class="clickable-row" data-id="' . htmlspecialchars($row['id']) . '">';
+        echo '<td>' . htmlspecialchars($row['student_id']) . '</td>';
+        echo '<td>' . htmlspecialchars($row['prefix'] . ' ' . $row['student_name']) . '</td>';
+        echo '<td>' . htmlspecialchars($row['class_level']) . '</td>';
+        echo '<td>' . htmlspecialchars($row['classroom']) . '</td>';
+        echo '<td>' . htmlspecialchars($row['academic_year']) . '</td>';
+        echo '</tr>';
+    }
+    echo '</tbody></table></div>';
+} else {
+    echo '<div class="alert alert-warning text-center">ไม่พบนักเรียนในระบบ</div>';
+}
+?>

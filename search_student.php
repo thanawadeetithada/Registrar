@@ -30,8 +30,8 @@ if ($search) {
     // เช็คว่ามีข้อมูลหรือไม่
     if ($result->num_rows > 0) {
         echo '<div class="table-responsive">';
-        echo '<table class="table table-bordered">';
-        echo '<thead><tr><th>รหัสนักเรียน</th><th>เลขบัตรประชาชน</th><th>ชื่อ</th><th>ระดับชั้น</th><th>ห้อง</th><th>ปีการศึกษา</th></tr></thead>';
+        echo '<table class="table table-bordered table-hover">';
+        echo '<thead class="thead-dark"><tr><th>รหัสนักเรียน</th><th>เลขบัตรประชาชน</th><th>ชื่อ</th><th>ระดับชั้น</th><th>ห้อง</th><th>ปีการศึกษา</th></tr></thead>';
         echo '<tbody>';
         
         // แสดงผลลัพธ์
