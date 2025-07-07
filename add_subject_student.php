@@ -39,6 +39,8 @@ if ($class_level && $academic_year && $student_id) {
         $added_subject_ids[] = $row['subject_id'];
     }
 }
+
+$displayed_levels = []; 
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -74,21 +76,91 @@ if ($class_level && $academic_year && $student_id) {
                 <div class="card-body" style="margin-left: 2rem; margin-right: 2rem;">
                     <?php if (!empty($subjects)): ?>
                     <form method="POST" action="insert_subject_student.php" id="subjectForm">
-                        <?php foreach ($subjects as $subject): 
-        $subject_id = $subject['id'];
-        $isChecked = in_array($subject_id, $added_subject_ids);
-    ?>
-                        <div class="form-check form-switch" style="font-size: 1.3rem;">
-                            <input class="form-check-input subject-switch" type="checkbox"
-                                data-subject-name="<?= htmlspecialchars($subject['subject_name']) ?>"
-                                data-subject-id="<?= $subject_id ?>" name="subject_ids[]" value="<?= $subject_id ?>"
-                                id="subject<?= $subject_id ?>" <?= $isChecked ? 'checked' : '' ?>
-                                <?= $isChecked ? 'data-default-checked="true"' : '' ?>>
-                            <label class="form-check-label" for="subject<?= $subject_id ?>">
-                                <?= htmlspecialchars($subject['subject_name']) ?>
-                            </label>
+                        <?php 
+                        $subject_checked_map = []; // [1 => [subject_id, ...], 2 => [...]]
+                        $subject_total_map = [];     // นับจำนวนวิชาทั้งหมดในแต่ละชั้น
+                        $subject_selected_map = [];
+
+                    foreach ($subjects as $subject): 
+    $subject_id = $subject['id'];
+    $subject_name = $subject['subject_name'];
+    $isChecked = in_array($subject_id, $added_subject_ids);
+
+    if (preg_match('/ป\.(\d)/u', $subject_name, $match)) {
+        $grade = $match[1];
+
+        // รวมจำนวนวิชาทั้งหมดของแต่ละชั้น
+        if (!isset($subject_total_map[$grade])) $subject_total_map[$grade] = 0;
+        $subject_total_map[$grade]++;
+
+        // นับเฉพาะที่ถูกเลือก
+        if (in_array($subject_id, $added_subject_ids)) {
+            if (!isset($subject_selected_map[$grade])) $subject_selected_map[$grade] = 0;
+            $subject_selected_map[$grade]++;
+        }
+    }
+    // === Step 1: ตรวจหา ป.1–ป.6 จากชื่อวิชา ===
+    $grade_level_match = [];
+    preg_match('/ป\.(\d)/u', $subject_name, $grade_level_match);
+    $grade_level = $grade_level_match[1] ?? null;
+
+    // === Step 2: Render switcher ป.1–ป.6 เฉพาะรอบแรกเท่านั้น ===
+    if ($grade_level && !in_array($grade_level, $displayed_levels)):
+        $displayed_levels[] = $grade_level; // เก็บว่ามีการแสดงแล้ว
+        $isGradeFullyChecked = isset($subject_total_map[$grade_level]) &&
+                       isset($subject_selected_map[$grade_level]) &&
+                       $subject_total_map[$grade_level] === $subject_selected_map[$grade_level];
+
+?>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch" style="font-size: 1.1rem;">
+                                    <input class="form-check-input subject-switch" type="checkbox" name="subject_ids[]"
+                                        value="<?= $subject_id ?>" id="subject<?= $subject_id ?>"
+                                        data-subject-name="<?= htmlspecialchars($subject_name) ?>"
+                                        data-subject-id="<?= $subject_id ?>" data-grade="<?= $grade_level ?>"
+                                        <?= $isChecked ? 'checked data-default-checked="true"' : '' ?>>
+
+                                    <label class="form-check-label" for="subject<?= $subject_id ?>">
+                                        <?= htmlspecialchars($subject_name) ?>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch d-flex align-items-center"
+                                    style="font-size: 1.1rem;">
+                                    <input class="form-check-input ms-2" type="checkbox"
+                                        name="display_by_level[<?= $grade_level ?>]"
+                                        id="displayLevel<?= $grade_level ?>"
+                                        <?= $isGradeFullyChecked ? 'checked' : '' ?>>
+                                    <label class="form-check-label ms-5" for="displayLevel<?= $grade_level ?>">
+                                        ป.<?= $grade_level ?> ทั้งหมด
+                                    </label>
+                                </div>
+                            </div>
                         </div>
+
+                        <?php else: ?>
+                        <!-- หากแสดง switcher แล้ว ก็ไม่ต้องแสดงอีก -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch" style="font-size: 1.1rem;">
+                                    <input class="form-check-input subject-switch" type="checkbox" name="subject_ids[]"
+                                        value="<?= $subject_id ?>" id="subject<?= $subject_id ?>"
+                                        data-subject-name="<?= htmlspecialchars($subject_name) ?>"
+                                        data-subject-id="<?= $subject_id ?>" data-grade="<?= $grade_level ?>"
+                                        <?= $isChecked ? 'checked data-default-checked="true"' : '' ?>>
+
+                                    <label class="form-check-label" for="subject<?= $subject_id ?>">
+                                        <?= htmlspecialchars($subject_name) ?>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                         <?php endforeach; ?>
+
+
                         <input type="hidden" name="id" value="<?= htmlspecialchars($id) ?>">
                         <input type="hidden" name="student_id" value="<?= htmlspecialchars($student_id) ?>">
                         <input type="hidden" name="academic_year" value="<?= htmlspecialchars($academic_year) ?>">
@@ -131,6 +203,7 @@ if ($class_level && $academic_year && $student_id) {
     <script>
     let removedSubjectIds = [];
     let uncheckedSubject = null;
+    let uncheckedLevelSwitch = null;
 
     document.querySelectorAll('.subject-switch').forEach(sw => {
         sw.addEventListener('change', function() {
@@ -142,6 +215,11 @@ if ($class_level && $academic_year && $student_id) {
                 uncheckedSubject = this;
                 $('#confirmDeleteModal').modal('show');
             }
+
+            const grade = this.dataset.grade;
+            if (grade) {
+                updateLevelSwitchState(grade);
+            }
         });
     });
 
@@ -150,12 +228,66 @@ if ($class_level && $academic_year && $student_id) {
             removedSubjectIds.push(uncheckedSubject.dataset.subjectId);
             document.getElementById('removed_subject_ids').value = removedSubjectIds.join(',');
             $('#confirmDeleteModal').modal('hide');
+        } else if (uncheckedLevelSwitch) {
+            // กรณียืนยันลบกลุ่มชั้น
+            const level = uncheckedLevelSwitch.id.replace('displayLevel', '');
+            uncheckedLevelSwitch.checked = false;
+
+            // เอา checkbox วิชาทั้งหมดของชั้นนี้ออก
+            document.querySelectorAll('.subject-switch[data-grade="' + level + '"]').forEach(sub => {
+                if (sub.hasAttribute('data-default-checked')) {
+                    removedSubjectIds.push(sub.dataset.subjectId);
+                }
+                sub.checked = false;
+            });
+
+            document.getElementById('removed_subject_ids').value = removedSubjectIds.join(',');
+            $('#confirmDeleteModal').modal('hide');
         }
+
+        // reset ตัวแปร
+        uncheckedSubject = null;
+        uncheckedLevelSwitch = null;
     });
 
     function redirectToStudentReport() {
         window.location.href = 'report_student.php?id=<?= urlencode($id) ?>';
 
+    }
+
+    document.querySelectorAll('[id^="displayLevel"]').forEach(levelSwitcher => {
+        levelSwitcher.addEventListener('change', function(e) {
+            const level = this.id.replace('displayLevel', '');
+            const checked = this.checked;
+
+            // ถ้าเปลี่ยนจาก true → false
+            if (!checked && this.defaultChecked) {
+                uncheckedLevelSwitch = this;
+                document.getElementById('modalSubjectName').textContent = 'ทั้งหมดของ ป.' + level;
+                $('#confirmDeleteModal').modal('show');
+
+                // ยกเลิก toggle ชั่วคราว (เพื่อรอผู้ใช้ยืนยัน)
+                setTimeout(() => {
+                    this.checked = true
+                }, 0);
+                return;
+            }
+
+            // เปลี่ยนสถานะของ checkbox รายวิชาในระดับนี้
+            document.querySelectorAll('.subject-switch[data-grade="' + level + '"]').forEach(sub => {
+                sub.checked = checked;
+            });
+        });
+    });
+
+    function updateLevelSwitchState(grade) {
+        const allInGrade = document.querySelectorAll(`.subject-switch[data-grade="${grade}"]`);
+        const checkedInGrade = Array.from(allInGrade).filter(el => el.checked);
+
+        const levelSwitch = document.getElementById('displayLevel' + grade);
+        if (levelSwitch) {
+            levelSwitch.checked = checkedInGrade.length === allInGrade.length;
+        }
     }
     </script>
 
