@@ -279,7 +279,7 @@ $birth_date_display = $birth_date ? date('d-m-Y', strtotime($birth_date)) : '';
                         <?php foreach ($scores as $index => $row): ?>
                         <tr>
                             <td><?= htmlspecialchars($row['subject_ids']) ?></td>
-                            <td><?= htmlspecialchars($row['subject_name']) ?>
+                            <td style="text-align: justify;"><?= htmlspecialchars($row['subject_name']) ?>
                                 <input type="hidden" name="subject_ids[]" value="<?= $row['subject_id'] ?>">
                             <td>
                                 <span
