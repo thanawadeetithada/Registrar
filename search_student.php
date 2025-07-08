@@ -13,6 +13,7 @@ if ($search) {
            OR CONCAT(prefix, ' ', student_name) LIKE ? 
            OR SUBSTRING_INDEX(student_name, ' ', 1) LIKE ? 
            OR SUBSTRING_INDEX(student_name, ' ', -1) LIKE ?
+           ORDER BY student_id ASC
     ";
 
     $stmt = $conn->prepare($sql);

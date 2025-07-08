@@ -29,7 +29,7 @@ if (!empty($subject_id) && !empty($academic_year)) {
         ss.subject_id = ? 
         AND ss.academic_year = ? 
         AND s.class_level = ? 
- 
+    ORDER BY ss.student_id ASC
 ");
 
 $stmt->bind_param("iis", $subject_id, $academic_year, $class_level);

@@ -32,7 +32,7 @@ $sql = "SELECT id, student_id, student_name, prefix, class_level, classroom, aca
 if ($where) {
     $sql .= ' WHERE ' . implode(' AND ', $where);
 }
-$sql .= " ORDER BY class_level, student_name";
+$sql .= " ORDER BY student_id ASC";
 
 $stmt = $conn->prepare($sql);
 if ($types !== '') {
