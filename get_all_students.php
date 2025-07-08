@@ -28,7 +28,7 @@ if (!empty($classroom)) {
     $types .= 's';
 }
 
-$sql = "SELECT id, student_id, student_name, prefix, class_level, classroom, academic_year FROM students";
+$sql = "SELECT id, student_id, student_name, prefix, class_level, classroom, academic_year, citizen_id FROM students";
 if ($where) {
     $sql .= ' WHERE ' . implode(' AND ', $where);
 }
@@ -47,20 +47,25 @@ if ($result->num_rows > 0) {
     echo '<table class="table table-bordered table-hover">';
     echo '<thead class="thead-dark">';
     echo '<tr>
-            <th>รหัสนักเรียน</th>
-            <th>ชื่อ-นามสกุล</th>
-            <th>ระดับชั้น</th>
-            <th>ห้อง</th>
-            <th>ปีการศึกษา</th>
+            <th style="width: 100px;" class="text-center">ลำดับ</th>
+            <th class="text-center">รหัสนักเรียน</th>
+            <th class="text-center">เลขบัตรประชาชน</th>
+            <th class="text-center">ชื่อ-นามสกุล</th>
+            <th class="text-center">ระดับชั้น</th>
+            <th class="text-center">ห้อง</th>
+            <th class="text-center">ปีการศึกษา</th>
           </tr>';
     echo '</thead><tbody>';
+    $index = 1;
     while ($row = $result->fetch_assoc()) {
         echo '<tr class="clickable-row" data-id="' . htmlspecialchars($row['id']) . '">';
-        echo '<td>' . htmlspecialchars($row['student_id']) . '</td>';
+        echo '<td class="text-center">' . $index++ . '</td>';
+        echo '<td class="text-center">' . htmlspecialchars($row['student_id']) . '</td>';
+        echo '<td class="text-center">' . htmlspecialchars($row['citizen_id']) . '</td>';
         echo '<td>' . htmlspecialchars($row['prefix'] . ' ' . $row['student_name']) . '</td>';
         echo '<td>' . htmlspecialchars($row['class_level']) . '</td>';
-        echo '<td>' . htmlspecialchars($row['classroom']) . '</td>';
-        echo '<td>' . htmlspecialchars($row['academic_year']) . '</td>';
+        echo '<td class="text-center">' . htmlspecialchars($row['classroom']) . '</td>';
+        echo '<td class="text-center">' . htmlspecialchars($row['academic_year']) . '</td>';
         echo '</tr>';
     }
     echo '</tbody></table></div>';

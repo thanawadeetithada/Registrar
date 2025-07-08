@@ -31,18 +31,28 @@ if ($search) {
     if ($result->num_rows > 0) {
         echo '<div class="table-responsive">';
         echo '<table class="table table-bordered table-hover">';
-        echo '<thead class="thead-dark"><tr><th>รหัสนักเรียน</th><th>เลขบัตรประชาชน</th><th>ชื่อ</th><th>ระดับชั้น</th><th>ห้อง</th><th>ปีการศึกษา</th></tr></thead>';
+        echo '<thead class="thead-dark"><tr>
+                <th style="width: 100px;" class="text-center">ลำดับ</th>
+                <th class="text-center">รหัสนักเรียน</th>
+                <th class="text-center">เลขบัตรประชาชน</th>
+                <th class="text-center">ชื่อ</th>
+                <th class="text-center">ระดับชั้น</th>
+                <th class="text-center">ห้อง</th>
+                <th class="text-center">ปีการศึกษา</th>
+                </tr></thead>';
         echo '<tbody>';
         
         // แสดงผลลัพธ์
+        $index = 1;
         while ($student = $result->fetch_assoc()) {
             echo '<tr class="clickable-row" data-id="' . htmlspecialchars($student['id']) . '">';
-            echo '<td>' . htmlspecialchars($student['student_id']) . '</td>';
+            echo '<td class="text-center">' . $index++ . '</td>';
+            echo '<td class="text-center">' . htmlspecialchars($student['student_id']) . '</td>';
             echo '<td>' . htmlspecialchars($student['citizen_id']) . '</td>';
             echo '<td>' . htmlspecialchars($student['prefix'] . ' ' . $student['student_name']) . '</td>';
             echo '<td>' . htmlspecialchars($student['class_level']) . '</td>';
-            echo '<td>' . htmlspecialchars($student['classroom']) . '</td>';
-            echo '<td>' . htmlspecialchars($student['academic_year']) . '</td>';
+            echo '<td class="text-center">' . htmlspecialchars($student['classroom']) . '</td>';
+            echo '<td class="text-center">' . htmlspecialchars($student['academic_year']) . '</td>';
             echo '</tr>';
         }
         echo '</tbody></table>';
