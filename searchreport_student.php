@@ -4,6 +4,13 @@ require_once 'db.php';  // เชื่อมต่อฐานข้อมู�
 $academicYears = [];
 $classLevels = [];
 
+$classrooms = [];
+
+$resultClassroom = $conn->query("SELECT DISTINCT classroom FROM students ORDER BY classroom ASC");
+while ($row = $resultClassroom->fetch_assoc()) {
+    $classrooms[] = $row['classroom'];
+}
+
 $resultYear = $conn->query("SELECT DISTINCT academic_year FROM students ORDER BY academic_year DESC");
 while ($row = $resultYear->fetch_assoc()) {
     $academicYears[] = $row['academic_year'];
@@ -126,6 +133,14 @@ while ($row = $resultLevel->fetch_assoc()) {
                             <option value="ชั้นมัธยมศึกษา">ชั้นมัธยมศึกษา</option>
                         </select>
                     </div>
+                    <div class="col-md-3">
+                        <select class="form-control" id="filterClassroom">
+                            <option value="">-- เลือกห้องเรียน --</option>
+                            <?php foreach ($classrooms as $room): ?>
+                            <option value="<?= htmlspecialchars($room) ?>"><?= htmlspecialchars($room) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
                 <div class="row justify-content-center">
                     <div class="col-md-3 text-center">
@@ -162,6 +177,7 @@ while ($row = $resultLevel->fetch_assoc()) {
             }
             $('#filterAcademicYear').val('');
             $('#filterClassLevel').val('');
+            $('#filterClassroom').val('');
             $.ajax({
                 url: 'search_student.php', // เปลี่ยนไปใช้ search_student.php
                 method: 'POST',
@@ -190,6 +206,7 @@ while ($row = $resultLevel->fetch_assoc()) {
         $('#searchInput').val('');
         $('#filterAcademicYear').val('');
         $('#filterClassLevel').val('');
+        $('#filterClassroom').val('');
         $.ajax({
             url: 'get_all_students.php',
             method: 'GET',
@@ -208,13 +225,15 @@ while ($row = $resultLevel->fetch_assoc()) {
         $('#searchInput').val('');
         const year = $('#filterAcademicYear').val();
         const group = $('#filterClassLevel').val();
+        const room = $('#filterClassroom').val();
 
         $.ajax({
             url: 'get_all_students.php',
             method: 'GET',
             data: {
                 academic_year: year,
-                class_group: group
+                class_group: group,
+                classroom: room
             },
             success: function(response) {
                 $('#searchResult').html(response);

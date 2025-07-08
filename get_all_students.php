@@ -2,7 +2,8 @@
 require_once 'db.php';
 
 $academicYear = $_GET['academic_year'] ?? '';
-$classGroup = $_GET['class_group'] ?? ''; // รับค่าจาก dropdown: ชั้นประถมศึกษา, ชั้นมัธยมศึกษา
+$classGroup = $_GET['class_group'] ?? '';
+$classroom = $_GET['classroom'] ?? '';
 
 $where = [];
 $params = [];
@@ -18,6 +19,12 @@ if (!empty($academicYear)) {
 if (!empty($classGroup)) {
     $where[] = "class_level = ?";
     $params[] = $classGroup;
+    $types .= 's';
+}
+
+if (!empty($classroom)) {
+    $where[] = "classroom = ?";
+    $params[] = $classroom;
     $types .= 's';
 }
 
