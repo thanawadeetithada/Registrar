@@ -84,6 +84,21 @@ foreach ($scores as &$score) {
 
 $birth_date_display = $birth_date ? date('d-m-Y', strtotime($birth_date)) : '';
 
+
+$total_sum = 0;
+$total_subjects = count($scores);
+
+foreach ($scores as $row) {
+    $total_sum += (int)($row['total_score'] ?? 0);
+}
+
+$average_score = $total_subjects ? $total_sum / $total_subjects : 0;
+
+$grade_point_sum = 0;
+foreach ($scores as $row) {
+    $grade_point_sum += floatval($row['grade'] ?? 0);
+}
+$gpa = $total_subjects ? round($grade_point_sum / $total_subjects, 2) : 0;
 ?>
 
 <!DOCTYPE html>
@@ -169,6 +184,9 @@ $birth_date_display = $birth_date ? date('d-m-Y', strtotime($birth_date)) : '';
             </div>
 
             <div class="card-body">
+                <div class="text-center mb-2">
+                    <img src="img/logo2.png" alt="logo" style="height: 130px;">
+                </div>
                 <h5 class="text-center font-weight-bold">แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายบุคคล</h5>
                 <form id="studentInfoForm" class="text-center mb-1">
                     <?php if ($class_level && $classroom && $academic_year): ?>
@@ -251,63 +269,71 @@ $birth_date_display = $birth_date ? date('d-m-Y', strtotime($birth_date)) : '';
 
                 </div>
                 <br>
-                 <div class="table-responsive">
-                <table class="table table-bordered text-center table-sm">
-                    <thead class="thead-light">
-                        <tr>
-                            <th rowspan="2" style="vertical-align: middle;">รหัสรายวิชา</th>
-                            <th rowspan="2" style="vertical-align: middle;">กลุ่มสาระการเรียนรู้</th>
-                            <th colspan="1">ภาคเรียนที่ 1</th>
-                            <th colspan="1">ภาคเรียนที่ 2</th>
-                            <th rowspan="2" style="vertical-align: middle;">รวม</th>
-                            <th rowspan="2" style="vertical-align: middle;">ระดับ</th>
-                        </tr>
-                        <?php if ($class_level === 'ชั้นมัธยมศึกษา'): ?>
-                        <tr>
-                            <th>100 คะแนน</th>
-                            <th>100 คะแนน</th>
-                        </tr>
-                        <?php else: ?>
-                        <tr>
-                            <th>50 คะแนน</th>
-                            <th>50 คะแนน</th>
-                        </tr>
-                        <?php endif; ?>
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center table-sm">
+                        <thead class="thead-light">
+                            <tr>
+                                <th rowspan="2" style="vertical-align: middle;">รหัสรายวิชา</th>
+                                <th rowspan="2" style="vertical-align: middle;">กลุ่มสาระการเรียนรู้</th>
+                                <th colspan="1">ภาคเรียนที่ 1</th>
+                                <th colspan="1">ภาคเรียนที่ 2</th>
+                                <th rowspan="2" style="vertical-align: middle;">รวม</th>
+                                <th rowspan="2" style="vertical-align: middle;">ระดับ</th>
+                            </tr>
+                            <?php if ($class_level === 'ชั้นมัธยมศึกษา'): ?>
+                            <tr>
+                                <th>100 คะแนน</th>
+                                <th>100 คะแนน</th>
+                            </tr>
+                            <?php else: ?>
+                            <tr>
+                                <th>50 คะแนน</th>
+                                <th>50 คะแนน</th>
+                            </tr>
+                            <?php endif; ?>
 
-                    </thead>
-                    <tbody>
-                        <?php foreach ($scores as $index => $row): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($row['subject_ids']) ?></td>
-                            <td style="text-align: justify;"><?= htmlspecialchars($row['subject_name']) ?>
-                                <input type="hidden" name="subject_ids[]" value="<?= $row['subject_id'] ?>">
-                            <td>
-                                <span
-                                    class="display-value"><?= htmlspecialchars($row['semester1_score'] ?? '') ?></span>
-                                <input type="number" name="semester1_scores[]"
-                                    class="form-control form-control-sm d-none editable-input"
-                                    value="<?= $row['semester1_score'] ?>">
-                            </td>
-                            <td>
-                                <span
-                                    class="display-value"><?= htmlspecialchars($row['semester2_score'] ?? '') ?></span>
-                                <input type="number" name="semester2_scores[]"
-                                    class="form-control form-control-sm d-none editable-input"
-                                    value="<?= $row['semester2_score'] ?>">
-                            </td>
-                            <td><?= htmlspecialchars($row['total_score']) ?></td>
-                            <td><?= htmlspecialchars($row['grade'] ?? '-') ?></td>
-                        </tr>
-                        <?php endforeach; ?>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($scores as $index => $row): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($row['subject_ids']) ?></td>
+                                <td style="text-align: justify;"><?= htmlspecialchars($row['subject_name']) ?>
+                                    <input type="hidden" name="subject_ids[]" value="<?= $row['subject_id'] ?>">
+                                <td>
+                                    <span
+                                        class="display-value"><?= htmlspecialchars($row['semester1_score'] ?? '') ?></span>
+                                    <input type="number" name="semester1_scores[]"
+                                        class="form-control form-control-sm d-none editable-input"
+                                        value="<?= $row['semester1_score'] ?>">
+                                </td>
+                                <td>
+                                    <span
+                                        class="display-value"><?= htmlspecialchars($row['semester2_score'] ?? '') ?></span>
+                                    <input type="number" name="semester2_scores[]"
+                                        class="form-control form-control-sm d-none editable-input"
+                                        value="<?= $row['semester2_score'] ?>">
+                                </td>
+                                <td><?= htmlspecialchars($row['total_score']) ?></td>
+                                <td><?= htmlspecialchars($row['grade'] ?? '-') ?></td>
+                            </tr>
+                            <?php endforeach; ?>
 
-                        <?php if (empty($scores)): ?>
-                        <tr>
-                            <td colspan="5">ไม่พบข้อมูลคะแนน</td>
-                        </tr>
-                        <?php endif; ?>
-                    </tbody>
+                            <?php if (empty($scores)): ?>
+                            <tr>
+                                <td colspan="5">ไม่พบข้อมูลคะแนน</td>
+                            </tr>
+                            <?php endif; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="2">ผลรวม / คะแนนเฉลี่ย</th>
+                                <th colspan="3"><?= number_format($total_sum, 0) ?> /
+                                    <?= number_format($average_score, 2) ?></th>
+                                <th><?= number_format($gpa, 2) ?></th>
+                            </tr>
+                        </tfoot>
 
-                </table>
+                    </table>
                 </div>
                 <div class="text-right mt-3 no-print">
                     <a href="edit_student.php?student_id=<?= urlencode($student_id) ?>" class="btn btn-warning"
