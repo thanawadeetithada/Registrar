@@ -82,7 +82,14 @@ foreach ($scores as &$score) {
     }
 }
 
-$birth_date_display = $birth_date ? date('d-m-Y', strtotime($birth_date)) : '';
+$birth_date_display = '';
+if ($birth_date) {
+    $date = new DateTime($birth_date);
+    $day = $date->format('d');
+    $month = $date->format('m');
+    $year = (int)$date->format('Y') + 543; // แปลง ค.ศ. เป็น พ.ศ.
+    $birth_date_display = "$day-$month-$year";
+}
 
 
 $total_sum = 0;
