@@ -267,7 +267,7 @@ $gpa = $total_subjects ? round($grade_point_sum / $total_subjects, 2) : 0;
                     <button class="btn btn-info" id="editStudentBtn">
                         <i class="fas fa-user-edit"></i> แก้ไขข้อมูลนักเรียน
                     </button>
-                    <button class="btn btn-success d-none" id="saveStudentBtn" onclick="saveStudentInfo()">
+                    <button class="btn btn-success d-none" id="saveStudentBtn" type="button" onclick="saveStudentInfo()">
                         <i class="fas fa-save"></i> บันทึกข้อมูลนักเรียน
                     </button>
                     <button class="btn btn-secondary d-none" id="cancelStudentBtn" onclick="location.reload()">
@@ -550,7 +550,6 @@ $gpa = $total_subjects ? round($grade_point_sum / $total_subjects, 2) : 0;
     function saveStudentInfo() {
         const form = document.getElementById('studentInfoForm');
         const formData = new FormData(form);
-
         formData.append('academic_year', '<?= $academic_year ?>');
 
         $.ajax({
@@ -559,11 +558,17 @@ $gpa = $total_subjects ? round($grade_point_sum / $total_subjects, 2) : 0;
             data: formData,
             processData: false,
             contentType: false,
+            dataType: 'json',
             success: function(res) {
-                $('#studentSaveSuccessModal').modal('show');
+                if (res && res.success) {
+                    $('#studentSaveSuccessModal').modal('show');
+                } else {
+                    alert(res?.message || 'บันทึกไม่สำเร็จ');
+                }
             },
-            error: function() {
+            error: function(xhr) {
                 alert('เกิดข้อผิดพลาดในการบันทึกข้อมูลนักเรียน');
+                console.error(xhr.responseText);
             }
         });
     }

@@ -1,24 +1,33 @@
 <?php
 require_once 'db.php';
+header('Content-Type: application/json; charset=utf-8');
 
-$id = $_POST['id'] ?? null;  // รับค่า id แทน student_id
-$prefix = $_POST['prefix'] ?? null;
-$student_name = $_POST['student_name'] ?? null;
-$citizen_id = $_POST['citizen_id'] ?? null;
-$birth_date = $_POST['birth_date'] ?? null;
+try {
+  $id            = $_POST['id'] ?? null;
+  $student_id    = $_POST['student_id'] ?? null;
+  $prefix        = $_POST['prefix'] ?? null;
+  $student_name  = $_POST['student_name'] ?? null;
+  $citizen_id    = $_POST['citizen_id'] ?? null;
+  $birth_date    = $_POST['birth_date'] ?? null;
+  $academic_year = $_POST['academic_year'] ?? null;
 
-if ($id && $prefix && $student_name && $citizen_id && $birth_date) {
-    $stmt = $conn->prepare("UPDATE students SET prefix = ?, student_name = ?, citizen_id = ?, birth_date = ? WHERE id = ?");
-    $stmt->bind_param("ssssi", $prefix, $student_name, $citizen_id, $birth_date, $id);  // id เป็น integer
+  if (!$id || !$student_id) {
+    echo json_encode(['success' => false, 'message' => 'missing id or student_id']);
+    exit;
+  }
 
-    if ($stmt->execute()) {
-        echo 'success';
-    } else {
-        http_response_code(500);
-        echo 'เกิดข้อผิดพลาดในการอัปเดตข้อมูล';
-    }
-} else {
-    http_response_code(400);
-    echo 'ข้อมูลไม่ครบ';
+  $sql = "UPDATE students
+          SET prefix=?, student_name=?, citizen_id=?, birth_date=?, academic_year=?
+          WHERE id=? AND student_id=?";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("sssssis", $prefix, $student_name, $citizen_id, $birth_date, $academic_year, $id, $student_id);
+
+  if ($stmt->execute()) {
+    echo json_encode(['success' => true]);
+  } else {
+    echo json_encode(['success' => false, 'message' => $stmt->error]);
+  }
+} catch (Throwable $e) {
+  echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?>
